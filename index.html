@@ -2068,15 +2068,6 @@
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
       }
-      .auth-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        color: var(--text-mute);
-        font-size: .9rem;
-        padding: 20px;
-      }
     </style>
   </head>
   <body>
@@ -3537,7 +3528,7 @@
       }
 
       // ============================================================
-      // FIXED: CONFIRM PAYMENT - Uses Firestore document ID
+      // CONFIRM PAYMENT - Uses Firestore document ID
       // ============================================================
       async function confirmPaymentAndLoad() {
         document.getElementById("depositFormStep2").classList.add("hidden");
@@ -3555,11 +3546,9 @@
               createdAt: new Date().toISOString()
             };
             
-            // Add to Firestore and get the document ID
             const docRef = await db.collection(TRANSACTIONS_COLLECTION).add(txData);
-            const txId = docRef.id; // This is the actual Firestore document ID
+            const txId = docRef.id;
             
-            // Add to user history with the correct txId
             const historyEntry = {
               type: "deposit",
               label: `Deposit Request: ${fmtMoney(pendingDepositAmount)} ${pendingDepositCrypto}`,
@@ -3589,7 +3578,7 @@
       }
 
       // ============================================================
-      // FIXED: EXECUTE WITHDRAW - Uses Firestore document ID
+      // EXECUTE WITHDRAW - Uses Firestore document ID
       // ============================================================
       async function executeWithdraw(e) {
         e.preventDefault();
@@ -3797,7 +3786,7 @@
       }
 
       // ============================================================
-      // FIXED: RENDER ADMIN PANEL - Uses document IDs correctly
+      // RENDER ADMIN PANEL - Uses document IDs correctly
       // ============================================================
       async function renderAdminPanel() {
         try {
@@ -3807,7 +3796,9 @@
 
           const txSnapshot = await db.collection(TRANSACTIONS_COLLECTION).get();
           const transactions = [];
-          txSnapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
+          txSnapshot.forEach(doc => {
+            transactions.push({ docId: doc.id, ...doc.data() });
+          });
 
           const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
           const plans = [];
@@ -3850,7 +3841,7 @@
               </tr>
             `).join("");
 
-          // Pending Deposits - using doc.id from Firestore
+          // Pending Deposits - using docId from Firestore
           const depList = document.getElementById("pendingDepositsList");
           if (pendingDeposits.length === 0) {
             depList.innerHTML = '<p style="color:var(--text-mute);">No pending deposits.</p>';
@@ -3863,14 +3854,14 @@
                   </div>
                   <div class="transaction-amount" style="color:var(--cyan);">${fmtMoney(t.amount)}</div>
                   <div class="admin-actions">
-                    <button class="btn btn-success btn-sm" onclick="approveTransaction('${t.id}')">Approve</button>
-                    <button class="btn btn-danger btn-sm" onclick="rejectTransaction('${t.id}')">Reject</button>
+                    <button class="btn btn-success btn-sm" onclick="approveTransaction('${t.docId}')">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectTransaction('${t.docId}')">Reject</button>
                   </div>
                 </div>
               `).join("");
           }
 
-          // Pending Withdrawals - using doc.id from Firestore
+          // Pending Withdrawals - using docId from Firestore
           const withList = document.getElementById("pendingWithdrawalsList");
           if (pendingWithdrawals.length === 0) {
             withList.innerHTML = '<p style="color:var(--text-mute);">No pending withdrawals.</p>';
@@ -3883,8 +3874,8 @@
                   </div>
                   <div class="transaction-amount" style="color:var(--warn);">${fmtMoney(t.amount)}</div>
                   <div class="admin-actions">
-                    <button class="btn btn-success btn-sm" onclick="approveTransaction('${t.id}')">Approve</button>
-                    <button class="btn btn-danger btn-sm" onclick="rejectTransaction('${t.id}')">Reject</button>
+                    <button class="btn btn-success btn-sm" onclick="approveTransaction('${t.docId}')">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectTransaction('${t.docId}')">Reject</button>
                   </div>
                 </div>
               `).join("");
@@ -3972,21 +3963,22 @@
       }
 
       // ============================================================
-      // FIXED: ADMIN - APPROVE TRANSACTION - Uses document ID correctly
+      // ADMIN - APPROVE TRANSACTION - Uses document ID correctly
       // ============================================================
       async function approveTransaction(txId) {
+        console.log('Approving transaction with ID:', txId);
         try {
           const txDoc = await db.collection(TRANSACTIONS_COLLECTION).doc(txId).get();
           if (!txDoc.exists) {
-            showToast("Transaction not found", "error");
+            showToast("Transaction not found. ID: " + txId, "error");
+            console.error('Transaction not found:', txId);
             return;
           }
           const txData = txDoc.data();
+          console.log('Transaction data:', txData);
           
-          // Update transaction status
           await db.collection(TRANSACTIONS_COLLECTION).doc(txId).update({ status: "approved" });
 
-          // Update user balance and history
           const userDoc = await db.collection(USERS_COLLECTION).where('uid', '==', txData.userUid).get();
           if (!userDoc.empty) {
             const userRef = userDoc.docs[0].ref;
@@ -3996,7 +3988,6 @@
             
             if (txData.type === "deposit") {
               newBalance += txData.amount;
-              // Update or add history entry
               const existingHistory = userData.history || [];
               const existingIndex = existingHistory.findIndex(h => h.txId === txId);
               const historyEntry = {
@@ -4059,32 +4050,33 @@
           }
           
           renderAdminPanel();
-          // Update user dashboard if they're logged in
           const session = auth.currentUser;
           if (session && session.uid === txData.userUid) {
             renderDashboard();
           }
         } catch (error) {
           console.error('Approve transaction error:', error);
-          showToast("Failed to approve transaction.", "error");
+          showToast("Failed to approve transaction: " + error.message, "error");
         }
       }
 
       // ============================================================
-      // FIXED: ADMIN - REJECT TRANSACTION - Uses document ID correctly
+      // ADMIN - REJECT TRANSACTION - Uses document ID correctly
       // ============================================================
       async function rejectTransaction(txId) {
+        console.log('Rejecting transaction with ID:', txId);
         try {
           const txDoc = await db.collection(TRANSACTIONS_COLLECTION).doc(txId).get();
           if (!txDoc.exists) {
-            showToast("Transaction not found", "error");
+            showToast("Transaction not found. ID: " + txId, "error");
+            console.error('Transaction not found:', txId);
             return;
           }
           const txData = txDoc.data();
+          console.log('Transaction data:', txData);
           
           await db.collection(TRANSACTIONS_COLLECTION).doc(txId).update({ status: "rejected" });
 
-          // Update user history
           const userDoc = await db.collection(USERS_COLLECTION).where('uid', '==', txData.userUid).get();
           if (!userDoc.empty) {
             const userRef = userDoc.docs[0].ref;
@@ -4120,7 +4112,6 @@
                 txId: txId,
                 _refunded: true
               };
-              // Refund the amount
               if (existingIndex >= 0) {
                 existingHistory[existingIndex] = { ...existingHistory[existingIndex], ...historyEntry };
                 await userRef.update({
@@ -4138,14 +4129,13 @@
           
           showToast(`Transaction rejected`, "error");
           renderAdminPanel();
-          // Update user dashboard if they're logged in
           const session = auth.currentUser;
           if (session && session.uid === txData.userUid) {
             renderDashboard();
           }
         } catch (error) {
           console.error('Reject transaction error:', error);
-          showToast("Failed to reject transaction.", "error");
+          showToast("Failed to reject transaction: " + error.message, "error");
         }
       }
 
@@ -4173,7 +4163,6 @@
           }
         } else {
           if (!document.getElementById('page-landing').classList.contains('hidden')) {
-            // Already on landing page
           } else {
             navTo("landing");
           }
