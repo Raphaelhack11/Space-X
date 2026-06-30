@@ -2776,7 +2776,6 @@
       const auth = firebase.auth();
       const db = firebase.firestore();
 
-      // Enable offline persistence
       db.enablePersistence({ synchronizeTabs: true })
         .catch(err => console.warn('Firestore persistence:', err));
 
@@ -2786,18 +2785,16 @@
       const USERS_COLLECTION = 'users';
       const TRANSACTIONS_COLLECTION = 'transactions';
       const PLANS_COLLECTION = 'plans';
-      const ADMIN_COLLECTION = 'admin';
 
       // ============================================================
       // GLOBAL STATE
       // ============================================================
       let currentUserData = null;
-      let currentUserEmail = null;
       let isAdmin = false;
       let unsubscribeFunctions = [];
 
       // ============================================================
-      // DATA - Default Plans (will be seeded if empty)
+      // DEFAULT PLANS
       // ============================================================
       const DEFAULT_PLANS = [
         { id: 1, name: "Diamond VIP", amount: 10000, durationLabel: "1 week", durationDays: 7, rate: 100, featured: true },
@@ -2812,7 +2809,6 @@
         { id: 10, name: "Starter Micro", amount: 250, durationLabel: "1 month", durationDays: 30, rate: 50, featured: false },
       ];
       const TOP3_IDS = [1, 2, 3];
-
       const US_STATES = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "District of Columbia"];
       const WALLETS = { Bitcoin: "bc1qm4l45yuppla9d7a7vv7dz0cxvl55sqacx5mhgj", Ethereum: "0x5778e621aED2753102f6d316aB734Fd0fD413cdA" };
       const BG_PLACEHOLDERS = [
@@ -2875,7 +2871,7 @@
       }
 
       // ============================================================
-      // CLIPBOARD
+      // COPY WALLET ADDRESS
       // ============================================================
       function copyWalletAddress() {
         const addressText = document.getElementById("depositWalletAddress").textContent;
@@ -3134,7 +3130,7 @@
       }
 
       // ============================================================
-      // LIVE COUNTERS (UI only - decorative)
+      // LIVE COUNTERS
       // ============================================================
       function startLiveCounters() {
         let userCount = 579739;
@@ -3191,7 +3187,6 @@
         btn.innerHTML = `<span class="loading-spinner"></span> Creating account...`;
 
         try {
-          // Create auth user
           const userCred = await auth.createUserWithEmailAndPassword(email, password);
           const uid = userCred.user.uid;
 
@@ -3230,7 +3225,6 @@
           
           showToast(giveawayValid ? `Sign up successful! $${BONUS_AMOUNT.toLocaleString()} bonus credited!` : "Sign up successful!", "success");
           
-          // Auto-login and redirect
           await enterDashboard(uid);
           
         } catch (error) {
@@ -3261,6 +3255,7 @@
           if (email === ADMIN_EMAIL) {
             isAdmin = true;
             navTo("admin");
+            setupAdminListeners();
             renderAdminPanel();
             showToast("Welcome Admin!", "success");
           } else {
@@ -3281,7 +3276,6 @@
       // LOGOUT
       // ============================================================
       async function handleLogout() {
-        // Unsubscribe from all listeners
         unsubscribeFunctions.forEach(unsub => {
           try { unsub(); } catch(e) {}
         });
@@ -3289,7 +3283,6 @@
         
         await auth.signOut();
         currentUserData = null;
-        currentUserEmail = null;
         isAdmin = false;
         navTo("landing");
         showToast("You have been successfully logged out", "info");
@@ -3302,8 +3295,6 @@
       async function enterDashboard(uid) {
         navTo("dashboard");
         dashGo("home");
-        
-        // Set up real-time user listener
         setupUserListener(uid);
       }
 
@@ -3311,7 +3302,6 @@
       // REAL-TIME USER LISTENER
       // ============================================================
       function setupUserListener(uid) {
-        // Clean up old listeners
         unsubscribeFunctions.forEach(unsub => {
           try { unsub(); } catch(e) {}
         });
@@ -3320,7 +3310,6 @@
         const unsub = db.collection(USERS_COLLECTION).doc(uid).onSnapshot((doc) => {
           if (doc.exists) {
             currentUserData = { id: doc.id, ...doc.data() };
-            currentUserEmail = currentUserData.email;
             renderDashboard();
             updateAboutStats();
           }
@@ -3348,8 +3337,6 @@
       // UPDATE ABOUT STATS
       // ============================================================
       function updateAboutStats() {
-        // This is now handled by Firestore listeners
-        // We'll update admin stats via the admin panel render
         if (document.getElementById('page-admin') && !document.getElementById('page-admin').classList.contains('hidden')) {
           renderAdminPanel();
         }
@@ -3398,7 +3385,6 @@
           return;
         }
 
-        // Get plans from Firestore
         const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
         const plans = [];
         plansSnapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
@@ -3468,7 +3454,7 @@
       }
 
       // ============================================================
-      // LOAD PLANS FROM FIRESTORE
+      // LOAD PLANS
       // ============================================================
       async function loadPlans() {
         try {
@@ -3550,6 +3536,9 @@
         document.getElementById("depositFormStep1").classList.remove("hidden");
       }
 
+      // ============================================================
+      // FIXED: CONFIRM PAYMENT - Uses Firestore document ID
+      // ============================================================
       async function confirmPaymentAndLoad() {
         document.getElementById("depositFormStep2").classList.add("hidden");
         document.getElementById("depositFormStep3").classList.remove("hidden");
@@ -3557,8 +3546,6 @@
         if (currentUserData) {
           try {
             const txData = {
-              id: Date.now(),
-              type: "deposit",
               userUid: currentUserData.uid,
               userEmail: currentUserData.email,
               userName: currentUserData.name,
@@ -3567,16 +3554,19 @@
               status: "pending",
               createdAt: new Date().toISOString()
             };
-            await db.collection(TRANSACTIONS_COLLECTION).add(txData);
             
-            // Add to user history
+            // Add to Firestore and get the document ID
+            const docRef = await db.collection(TRANSACTIONS_COLLECTION).add(txData);
+            const txId = docRef.id; // This is the actual Firestore document ID
+            
+            // Add to user history with the correct txId
             const historyEntry = {
               type: "deposit",
               label: `Deposit Request: ${fmtMoney(pendingDepositAmount)} ${pendingDepositCrypto}`,
               date: new Date().toISOString(),
               amount: pendingDepositAmount,
               status: "pending",
-              txId: txData.id
+              txId: txId
             };
             await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
               history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
@@ -3598,6 +3588,9 @@
         }, 10000);
       }
 
+      // ============================================================
+      // FIXED: EXECUTE WITHDRAW - Uses Firestore document ID
+      // ============================================================
       async function executeWithdraw(e) {
         e.preventDefault();
         const method = document.getElementById("withdrawMethod").value;
@@ -3630,8 +3623,6 @@
 
         try {
           const txData = {
-            id: Date.now(),
-            type: "withdraw",
             userUid: currentUserData.uid,
             userEmail: currentUserData.email,
             userName: currentUserData.name,
@@ -3641,7 +3632,9 @@
             status: "pending",
             createdAt: new Date().toISOString()
           };
-          await db.collection(TRANSACTIONS_COLLECTION).add(txData);
+          
+          const docRef = await db.collection(TRANSACTIONS_COLLECTION).add(txData);
+          const txId = docRef.id;
 
           const historyEntry = {
             type: "withdraw",
@@ -3649,7 +3642,7 @@
             date: new Date().toISOString(),
             amount: -amt,
             status: "pending",
-            txId: txData.id
+            txId: txId
           };
           await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
             history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
@@ -3756,7 +3749,6 @@
         const id = Number(document.getElementById("calcPlanSelect").value);
         const result = document.getElementById("calcResult");
         if (!id) { result.classList.add("hidden"); return; }
-        // We need to get plans from DOM or fetch
         db.collection(PLANS_COLLECTION).get().then(snapshot => {
           const plans = [];
           snapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
@@ -3782,25 +3774,21 @@
       // ADMIN PANEL - REAL-TIME
       // ============================================================
       function setupAdminListeners() {
-        // Clean up old listeners
         unsubscribeFunctions.forEach(unsub => {
           try { unsub(); } catch(e) {}
         });
         unsubscribeFunctions = [];
 
-        // Listen for users
         const unsubUsers = db.collection(USERS_COLLECTION).onSnapshot(() => {
           renderAdminPanel();
         });
         unsubscribeFunctions.push(unsubUsers);
 
-        // Listen for transactions
         const unsubTx = db.collection(TRANSACTIONS_COLLECTION).onSnapshot(() => {
           renderAdminPanel();
         });
         unsubscribeFunctions.push(unsubTx);
 
-        // Listen for plans
         const unsubPlans = db.collection(PLANS_COLLECTION).onSnapshot(() => {
           renderAdminPanel();
           loadPlans();
@@ -3808,25 +3796,24 @@
         unsubscribeFunctions.push(unsubPlans);
       }
 
+      // ============================================================
+      // FIXED: RENDER ADMIN PANEL - Uses document IDs correctly
+      // ============================================================
       async function renderAdminPanel() {
         try {
-          // Get users
           const usersSnapshot = await db.collection(USERS_COLLECTION).get();
           const users = [];
           usersSnapshot.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
 
-          // Get transactions
           const txSnapshot = await db.collection(TRANSACTIONS_COLLECTION).get();
           const transactions = [];
           txSnapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
 
-          // Get plans
           const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
           const plans = [];
           plansSnapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
           plans.sort((a, b) => a.id - b.id);
 
-          // Stats
           document.getElementById("totalUsers").textContent = users.length;
           const pendingDeposits = transactions.filter(t => t.type === "deposit" && t.status === "pending");
           const pendingWithdrawals = transactions.filter(t => t.type === "withdraw" && t.status === "pending");
@@ -3863,7 +3850,7 @@
               </tr>
             `).join("");
 
-          // Pending Deposits
+          // Pending Deposits - using doc.id from Firestore
           const depList = document.getElementById("pendingDepositsList");
           if (pendingDeposits.length === 0) {
             depList.innerHTML = '<p style="color:var(--text-mute);">No pending deposits.</p>';
@@ -3883,7 +3870,7 @@
               `).join("");
           }
 
-          // Pending Withdrawals
+          // Pending Withdrawals - using doc.id from Firestore
           const withList = document.getElementById("pendingWithdrawalsList");
           if (pendingWithdrawals.length === 0) {
             withList.innerHTML = '<p style="color:var(--text-mute);">No pending withdrawals.</p>';
@@ -3985,7 +3972,7 @@
       }
 
       // ============================================================
-      // ADMIN - APPROVE TRANSACTION
+      // FIXED: ADMIN - APPROVE TRANSACTION - Uses document ID correctly
       // ============================================================
       async function approveTransaction(txId) {
         try {
@@ -4006,11 +3993,13 @@
             const userData = userDoc.docs[0].data();
             
             let newBalance = userData.balance || 0;
-            let historyEntry = null;
             
             if (txData.type === "deposit") {
               newBalance += txData.amount;
-              historyEntry = {
+              // Update or add history entry
+              const existingHistory = userData.history || [];
+              const existingIndex = existingHistory.findIndex(h => h.txId === txId);
+              const historyEntry = {
                 type: "deposit",
                 label: `Deposit Approved: ${fmtMoney(txData.amount)}`,
                 date: new Date().toISOString(),
@@ -4019,11 +4008,26 @@
                 txId: txId,
                 _processed: true
               };
+              
+              if (existingIndex >= 0) {
+                existingHistory[existingIndex] = { ...existingHistory[existingIndex], ...historyEntry };
+                await userRef.update({
+                  balance: newBalance,
+                  history: existingHistory
+                });
+              } else {
+                await userRef.update({
+                  balance: newBalance,
+                  history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+                });
+              }
               showToast(`Deposit of ${fmtMoney(txData.amount)} approved!`, "success");
             } else if (txData.type === "withdraw") {
               if (userData.balance >= txData.amount) {
                 newBalance -= txData.amount;
-                historyEntry = {
+                const existingHistory = userData.history || [];
+                const existingIndex = existingHistory.findIndex(h => h.txId === txId);
+                const historyEntry = {
                   type: "withdraw",
                   label: `Withdrawal Approved: ${fmtMoney(txData.amount)}`,
                   date: new Date().toISOString(),
@@ -4032,6 +4036,19 @@
                   txId: txId,
                   _processed: true
                 };
+                
+                if (existingIndex >= 0) {
+                  existingHistory[existingIndex] = { ...existingHistory[existingIndex], ...historyEntry };
+                  await userRef.update({
+                    balance: newBalance,
+                    history: existingHistory
+                  });
+                } else {
+                  await userRef.update({
+                    balance: newBalance,
+                    history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+                  });
+                }
                 showToast(`Withdrawal of ${fmtMoney(txData.amount)} approved!`, "success");
               } else {
                 showToast("Insufficient balance for this user", "error");
@@ -4039,16 +4056,14 @@
                 return;
               }
             }
-            
-            if (historyEntry) {
-              await userRef.update({
-                balance: newBalance,
-                history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
-              });
-            }
           }
           
           renderAdminPanel();
+          // Update user dashboard if they're logged in
+          const session = auth.currentUser;
+          if (session && session.uid === txData.userUid) {
+            renderDashboard();
+          }
         } catch (error) {
           console.error('Approve transaction error:', error);
           showToast("Failed to approve transaction.", "error");
@@ -4056,7 +4071,7 @@
       }
 
       // ============================================================
-      // ADMIN - REJECT TRANSACTION
+      // FIXED: ADMIN - REJECT TRANSACTION - Uses document ID correctly
       // ============================================================
       async function rejectTransaction(txId) {
         try {
@@ -4075,9 +4090,11 @@
             const userRef = userDoc.docs[0].ref;
             const userData = userDoc.docs[0].data();
             
-            let historyEntry = null;
+            const existingHistory = userData.history || [];
+            const existingIndex = existingHistory.findIndex(h => h.txId === txId);
+            
             if (txData.type === "deposit") {
-              historyEntry = {
+              const historyEntry = {
                 type: "deposit",
                 label: `Deposit Rejected: ${fmtMoney(txData.amount)}`,
                 date: new Date().toISOString(),
@@ -4085,8 +4102,16 @@
                 status: "rejected",
                 txId: txId
               };
+              if (existingIndex >= 0) {
+                existingHistory[existingIndex] = { ...existingHistory[existingIndex], ...historyEntry };
+                await userRef.update({ history: existingHistory });
+              } else {
+                await userRef.update({
+                  history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+                });
+              }
             } else if (txData.type === "withdraw") {
-              historyEntry = {
+              const historyEntry = {
                 type: "withdraw",
                 label: `Withdrawal Rejected: ${fmtMoney(txData.amount)}`,
                 date: new Date().toISOString(),
@@ -4096,20 +4121,28 @@
                 _refunded: true
               };
               // Refund the amount
-              await userRef.update({
-                balance: (userData.balance || 0) + txData.amount
-              });
-            }
-            
-            if (historyEntry) {
-              await userRef.update({
-                history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
-              });
+              if (existingIndex >= 0) {
+                existingHistory[existingIndex] = { ...existingHistory[existingIndex], ...historyEntry };
+                await userRef.update({
+                  balance: (userData.balance || 0) + txData.amount,
+                  history: existingHistory
+                });
+              } else {
+                await userRef.update({
+                  balance: (userData.balance || 0) + txData.amount,
+                  history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+                });
+              }
             }
           }
           
           showToast(`Transaction rejected`, "error");
           renderAdminPanel();
+          // Update user dashboard if they're logged in
+          const session = auth.currentUser;
+          if (session && session.uid === txData.userUid) {
+            renderDashboard();
+          }
         } catch (error) {
           console.error('Reject transaction error:', error);
           showToast("Failed to reject transaction.", "error");
@@ -4129,19 +4162,16 @@
             renderAdminPanel();
           } else {
             isAdmin = false;
-            // Check if user exists in Firestore
             const userDoc = await db.collection(USERS_COLLECTION).doc(user.uid).get();
             if (userDoc.exists) {
               await enterDashboard(user.uid);
             } else {
-              // User might have been deleted from Firestore
               await auth.signOut();
               navTo("landing");
               showToast("Account not found. Please sign up again.", "error");
             }
           }
         } else {
-          // User is signed out
           if (!document.getElementById('page-landing').classList.contains('hidden')) {
             // Already on landing page
           } else {
@@ -4161,11 +4191,9 @@
         observeReveals();
         startLiveCounters();
 
-        // Seed plans if empty
         await seedPlansIfEmpty();
         await loadPlans();
 
-        // Check if user is already logged in
         const currentUser = auth.currentUser;
         if (currentUser) {
           const email = currentUser.email;
