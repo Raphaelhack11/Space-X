@@ -3786,7 +3786,7 @@
       }
 
       // ============================================================
-      // RENDER ADMIN PANEL - Uses document IDs correctly
+      // RENDER ADMIN PANEL - FIXED: Uses document IDs correctly
       // ============================================================
       async function renderAdminPanel() {
         try {
@@ -3797,6 +3797,7 @@
           const txSnapshot = await db.collection(TRANSACTIONS_COLLECTION).get();
           const transactions = [];
           txSnapshot.forEach(doc => {
+            // Store the Firestore document ID as docId
             transactions.push({ docId: doc.id, ...doc.data() });
           });
 
@@ -3963,7 +3964,7 @@
       }
 
       // ============================================================
-      // ADMIN - APPROVE TRANSACTION - Uses document ID correctly
+      // ADMIN - APPROVE TRANSACTION - FIXED: Uses document ID correctly
       // ============================================================
       async function approveTransaction(txId) {
         console.log('Approving transaction with ID:', txId);
@@ -4061,7 +4062,7 @@
       }
 
       // ============================================================
-      // ADMIN - REJECT TRANSACTION - Uses document ID correctly
+      // ADMIN - REJECT TRANSACTION - FIXED: Uses document ID correctly
       // ============================================================
       async function rejectTransaction(txId) {
         console.log('Rejecting transaction with ID:', txId);
