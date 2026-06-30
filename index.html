@@ -858,13 +858,13 @@
         background-size: cover;
         background-position: center;
         isolation: isolate;
-        background-image: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(139, 92, 246, 0.2) 100%);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(139, 92, 246, 0.2) 100%);
       }
       .about-media::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(160deg, rgba(10, 15, 28, 0.2), rgba(10, 15, 28, 0.8));
+        background: linear-gradient(160deg, rgba(10, 15, 28, 0.2), rgba(10, 15, 28, 0.85));
       }
       .about-media-content {
         position: absolute;
@@ -898,19 +898,29 @@
         display: flex;
         gap: 30px;
         margin-top: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
-      .about-media-content .live-stats span {
+      .about-media-content .live-stats .stat-item {
+        text-align: center;
+      }
+      .about-media-content .live-stats .stat-item .num {
         font-family: var(--font-display);
         color: var(--text-hi);
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         font-weight: 700;
-      }
-      .about-media-content .live-stats small {
         display: block;
+      }
+      .about-media-content .live-stats .stat-item .num.live-counter {
+        color: var(--cyan);
+      }
+      .about-media-content .live-stats .stat-item small {
         font-size: .7rem;
         color: var(--text-mute);
         font-family: var(--font-mono);
         font-weight: 400;
+        display: block;
+        margin-top: 2px;
       }
       .about-media-tag {
         position: absolute;
@@ -1106,6 +1116,12 @@
         }
         .about-media {
           min-height: 280px;
+        }
+        .about-media-content .live-stats {
+          gap: 15px;
+        }
+        .about-media-content .live-stats .stat-item .num {
+          font-size: 1rem;
         }
       }
       .screen {
@@ -2165,9 +2181,18 @@
                 <span class="live-dot"></span>
                 <span class="live-text">● LIVE PERFORMANCE FEED</span>
                 <div class="live-stats">
-                  <span>$0.00 <small>Portfolio Value</small></span>
-                  <span>0 <small>Active Users</small></span>
-                  <span>0 <small>Total Invested</small></span>
+                  <div class="stat-item">
+                    <span class="num" id="livePortfolioValue">$2,000,000</span>
+                    <small>Portfolio Value</small>
+                  </div>
+                  <div class="stat-item">
+                    <span class="num live-counter" id="liveUserCount">579,739</span>
+                    <small>Active Users</small>
+                  </div>
+                  <div class="stat-item">
+                    <span class="num" id="liveInvestedAmount">$800,000</span>
+                    <small>Total Invested</small>
+                  </div>
                 </div>
               </div>
               <span class="about-media-tag">● Real-time performance feed</span>
@@ -2770,7 +2795,14 @@
       const LS_TRANSACTIONS = "raph_transactions";
 
       function getUsers() { try { return JSON.parse(localStorage.getItem(LS_USERS)) || {}; } catch (e) { return {}; } }
-      function saveUsers(u) { localStorage.setItem(LS_USERS, JSON.stringify(u)); }
+      function saveUsers(u) { localStorage.setItem(LS_USERS, JSON.stringify(u)); 
+        // Broadcast the change to other tabs/windows
+        try {
+          const bc = new BroadcastChannel('spacex_channel');
+          bc.postMessage({ type: 'users_updated', data: u });
+          bc.close();
+        } catch(e) {}
+      }
       function getSession() { return localStorage.getItem(LS_SESSION); }
       function setSession(email) { localStorage.setItem(LS_SESSION, email); }
       function clearSession() { localStorage.removeItem(LS_SESSION); }
@@ -2778,15 +2810,102 @@
       function saveCurrentUser(userObj) { const users = getUsers(); users[userObj.email] = userObj; saveUsers(users); }
 
       function getPlans() { try { const p = JSON.parse(localStorage.getItem(LS_PLANS)); if (p && p.length) return p; } catch (e) {} return PLANS; }
-      function savePlans(p) { localStorage.setItem(LS_PLANS, JSON.stringify(p)); }
+      function savePlans(p) { localStorage.setItem(LS_PLANS, JSON.stringify(p)); 
+        try {
+          const bc = new BroadcastChannel('spacex_channel');
+          bc.postMessage({ type: 'plans_updated', data: p });
+          bc.close();
+        } catch(e) {}
+      }
 
       function getTransactions() { try { return JSON.parse(localStorage.getItem(LS_TRANSACTIONS)) || []; } catch (e) { return []; } }
-      function saveTransactions(t) { localStorage.setItem(LS_TRANSACTIONS, JSON.stringify(t)); }
+      function saveTransactions(t) { localStorage.setItem(LS_TRANSACTIONS, JSON.stringify(t));
+        try {
+          const bc = new BroadcastChannel('spacex_channel');
+          bc.postMessage({ type: 'transactions_updated', data: t });
+          bc.close();
+        } catch(e) {}
+      }
 
       function fmtMoney(n) { return "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
       function planById(id, plans) { return plans.find(p => p.id === id); }
       function payout(plan) { return plan.amount * (1 + plan.rate / 100); }
       function profit(plan) { return plan.amount * (plan.rate / 100); }
+
+      /* ---------- CROSS-TAB SYNC ---------- */
+      function setupCrossTabSync() {
+        try {
+          const bc = new BroadcastChannel('spacex_channel');
+          bc.onmessage = function(event) {
+            const data = event.data;
+            if (data.type === 'users_updated') {
+              // Reload users data
+              renderAdminPanel();
+              updateAboutStats();
+              if (currentUser()) renderDashboard();
+            } else if (data.type === 'transactions_updated') {
+              renderAdminPanel();
+              if (currentUser()) renderDashboard();
+            } else if (data.type === 'plans_updated') {
+              renderAdminPanel();
+              renderLandingPlans();
+              renderDashPlansPreview();
+              renderAllPlans();
+              populateCalcDropdown();
+            }
+          };
+          // Also listen for storage events (for when localStorage changes from other tabs)
+          window.addEventListener('storage', function(e) {
+            if (e.key === LS_USERS || e.key === LS_TRANSACTIONS || e.key === LS_PLANS) {
+              renderAdminPanel();
+              updateAboutStats();
+              if (currentUser()) renderDashboard();
+            }
+          });
+        } catch(e) {
+          // Fallback: use storage event listener only
+          window.addEventListener('storage', function(e) {
+            if (e.key === LS_USERS || e.key === LS_TRANSACTIONS || e.key === LS_PLANS) {
+              renderAdminPanel();
+              updateAboutStats();
+              if (currentUser()) renderDashboard();
+            }
+          });
+        }
+      }
+
+      /* ---------- LIVE COUNTERS ---------- */
+      function startLiveCounters() {
+        // User counter: slowly increment from 579,739
+        let userCount = 579739;
+        const userEl = document.getElementById('liveUserCount');
+        if (userEl) {
+          setInterval(() => {
+            userCount += Math.floor(Math.random() * 3) + 1;
+            userEl.textContent = userCount.toLocaleString();
+          }, 8000);
+        }
+
+        // Portfolio value: slowly grow from $2,000,000
+        let portfolioValue = 2000000;
+        const portfolioEl = document.getElementById('livePortfolioValue');
+        if (portfolioEl) {
+          setInterval(() => {
+            portfolioValue += Math.floor(Math.random() * 50) + 10;
+            portfolioEl.textContent = '$' + portfolioValue.toLocaleString();
+          }, 5000);
+        }
+
+        // Invested amount: slowly grow from $800,000
+        let investedAmount = 800000;
+        const investedEl = document.getElementById('liveInvestedAmount');
+        if (investedEl) {
+          setInterval(() => {
+            investedAmount += Math.floor(Math.random() * 30) + 5;
+            investedEl.textContent = '$' + investedAmount.toLocaleString();
+          }, 6000);
+        }
+      }
 
       /* ---------- TOAST ---------- */
       function showToast(msg, type = "info") {
@@ -3151,7 +3270,6 @@
         renderActivePlan();
         renderHistory();
         renderSettings();
-        // Update about media stats
         updateAboutStats();
       }
 
@@ -3163,19 +3281,11 @@
         Object.values(users).forEach(u => {
           if (u.activePlan) totalInvested += u.activePlan.amount;
         });
-        const aboutContent = document.querySelector('.about-media-content');
-        if (aboutContent) {
-          const stats = aboutContent.querySelectorAll('.live-stats span');
-          if (stats.length >= 3) {
-            // Keep portfolio value dynamic from current user if logged in
-            const user = currentUser();
-            if (user) {
-              stats[0].innerHTML = `${fmtMoney(user.balance)} <small>Portfolio Value</small>`;
-            }
-            stats[1].innerHTML = `${totalUsers} <small>Active Users</small>`;
-            stats[2].innerHTML = `${fmtMoney(totalInvested)} <small>Total Invested</small>`;
-          }
-        }
+        // Update admin panel stats too
+        const totalUsersEl = document.getElementById('totalUsers');
+        if (totalUsersEl) totalUsersEl.textContent = totalUsers;
+        const totalInvestedEl = document.getElementById('totalInvested');
+        if (totalInvestedEl) totalInvestedEl.textContent = fmtMoney(totalInvested);
       }
 
       /* ---------- ACTIVE PLAN ---------- */
@@ -3326,7 +3436,7 @@
         const user = currentUser();
         if (user) {
           const transactions = getTransactions();
-          transactions.push({
+          const newTx = {
             id: Date.now(),
             type: "deposit",
             userEmail: user.email,
@@ -3335,7 +3445,8 @@
             crypto: pendingDepositCrypto,
             status: "pending",
             createdAt: new Date().toISOString()
-          });
+          };
+          transactions.push(newTx);
           saveTransactions(transactions);
           user.history.unshift({
             type: "deposit",
@@ -3343,7 +3454,7 @@
             date: new Date().toISOString(),
             amount: pendingDepositAmount,
             status: "pending",
-            txId: transactions[transactions.length - 1].id
+            txId: newTx.id
           });
           saveCurrentUser(user);
           showToast("Deposit request submitted. Awaiting admin approval.", "info");
@@ -3392,7 +3503,7 @@
 
         // Create pending withdrawal transaction
         const transactions = getTransactions();
-        transactions.push({
+        const newTx = {
           id: Date.now(),
           type: "withdraw",
           userEmail: user.email,
@@ -3402,7 +3513,8 @@
           address: address,
           status: "pending",
           createdAt: new Date().toISOString()
-        });
+        };
+        transactions.push(newTx);
         saveTransactions(transactions);
 
         // Add to user history as pending
@@ -3412,7 +3524,7 @@
           date: new Date().toISOString(),
           amount: -amt,
           status: "pending",
-          txId: transactions[transactions.length - 1].id
+          txId: newTx.id
         });
         saveCurrentUser(user);
         showToast("Withdrawal request submitted. Awaiting admin approval.", "info");
@@ -3439,11 +3551,13 @@
 
         // Check for pending transactions from global list and sync
         const transactions = getTransactions();
+        let updated = false;
         user.history.forEach(h => {
           if (h.txId) {
             const tx = transactions.find(t => t.id === h.txId);
             if (tx && tx.status !== h.status) {
               h.status = tx.status;
+              updated = true;
               if (tx.status === "approved" && h.type === "deposit" && !h._processed) {
                 user.balance += h.amount;
                 h._processed = true;
@@ -3464,9 +3578,11 @@
             }
           }
         });
-        saveCurrentUser(user);
-        document.getElementById("balanceAmount").textContent = fmtMoney(user.balance);
-        document.getElementById("fundBalancePreview").textContent = fmtMoney(user.balance);
+        if (updated) {
+          saveCurrentUser(user);
+          document.getElementById("balanceAmount").textContent = fmtMoney(user.balance);
+          document.getElementById("fundBalancePreview").textContent = fmtMoney(user.balance);
+        }
 
         list.innerHTML = user.history.map(h => {
           let icon =
@@ -3525,6 +3641,7 @@
       function populateCalcDropdown() {
         const sel = document.getElementById("calcPlanSelect");
         const plans = getPlans();
+        sel.innerHTML = '<option value="">Select plan</option>';
         plans.forEach(p => {
           const opt = document.createElement("option");
           opt.value = p.id;
@@ -3759,7 +3876,6 @@
         if (session && session !== "admin" && session === t.userEmail) {
           renderDashboard();
         }
-        // Update about stats
         updateAboutStats();
       }
 
@@ -3806,6 +3922,12 @@
         renderBgPlaceholders();
         renderTicker();
         observeReveals();
+        
+        // Setup cross-tab synchronization
+        setupCrossTabSync();
+        
+        // Start live counters
+        startLiveCounters();
 
         const savedPlans = getPlans();
         if (savedPlans && savedPlans.length) {
