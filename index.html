@@ -1,3 +1,6 @@
+Here's the complete updated code with the fixed transaction creation system:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -3528,44 +3531,63 @@
       }
 
       // ============================================================
-      // CONFIRM PAYMENT - Uses Firestore document ID
+      // FIXED: CONFIRM PAYMENT - Creates transaction in Firestore
       // ============================================================
       async function confirmPaymentAndLoad() {
         document.getElementById("depositFormStep2").classList.add("hidden");
         document.getElementById("depositFormStep3").classList.remove("hidden");
 
-        if (currentUserData) {
-          try {
-            const txData = {
-              userUid: currentUserData.uid,
-              userEmail: currentUserData.email,
-              userName: currentUserData.name,
-              amount: pendingDepositAmount,
-              crypto: pendingDepositCrypto,
-              status: "pending",
-              createdAt: new Date().toISOString()
-            };
-            
-            const docRef = await db.collection(TRANSACTIONS_COLLECTION).add(txData);
-            const txId = docRef.id;
-            
-            const historyEntry = {
-              type: "deposit",
-              label: `Deposit Request: ${fmtMoney(pendingDepositAmount)} ${pendingDepositCrypto}`,
-              date: new Date().toISOString(),
-              amount: pendingDepositAmount,
-              status: "pending",
-              txId: txId
-            };
-            await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
-              history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
-            });
-            
-            showToast("Deposit request submitted. Awaiting admin approval.", "info");
-          } catch (error) {
-            console.error('Deposit submission error:', error);
-            showToast("Failed to submit deposit. Please try again.", "error");
-          }
+        if (!currentUserData) {
+          showToast("You must be logged in to make a deposit", "error");
+          return;
+        }
+
+        try {
+          console.log('Creating deposit transaction for user:', currentUserData.uid);
+          
+          const txData = {
+            userUid: currentUserData.uid,
+            userEmail: currentUserData.email,
+            userName: currentUserData.name,
+            amount: pendingDepositAmount,
+            crypto: pendingDepositCrypto,
+            status: "pending",
+            type: "deposit",
+            createdAt: new Date().toISOString()
+          };
+          
+          console.log('Transaction data to save:', txData);
+          
+          // THIS IS THE KEY FIX - Using 'transactions' collection
+          const docRef = await db.collection('transactions').add(txData);
+          const txId = docRef.id;
+          
+          console.log('✅ Transaction created with ID:', txId);
+          
+          // Update user's history with the transaction ID
+          const historyEntry = {
+            type: "deposit",
+            label: `Deposit Request: ${fmtMoney(pendingDepositAmount)} ${pendingDepositCrypto}`,
+            date: new Date().toISOString(),
+            amount: pendingDepositAmount,
+            status: "pending",
+            txId: txId
+          };
+          
+          const userRef = db.collection('users').doc(currentUserData.uid);
+          await userRef.update({
+            history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+          });
+          
+          console.log('✅ User history updated with transaction ID:', txId);
+          showToast("Deposit request submitted. Awaiting admin approval.", "info");
+          
+        } catch (error) {
+          console.error('❌ Deposit submission error:', error);
+          showToast("Failed to submit deposit: " + error.message, "error");
+          document.getElementById("depositFormStep3").classList.add("hidden");
+          document.getElementById("depositFormStep1").classList.remove("hidden");
+          return;
         }
 
         setTimeout(() => {
@@ -3578,14 +3600,17 @@
       }
 
       // ============================================================
-      // EXECUTE WITHDRAW - Uses Firestore document ID
+      // FIXED: EXECUTE WITHDRAW - Creates transaction in Firestore
       // ============================================================
       async function executeWithdraw(e) {
         e.preventDefault();
         const method = document.getElementById("withdrawMethod").value;
         const amt = parseFloat(document.getElementById("withdrawAmount").value);
 
-        if (!currentUserData) return;
+        if (!currentUserData) {
+          showToast("Please log in first", "error");
+          return;
+        }
 
         if (!method) {
           showToast("Please select a payment method", "error");
@@ -3611,6 +3636,8 @@
         }
 
         try {
+          console.log('Creating withdrawal transaction for user:', currentUserData.uid);
+          
           const txData = {
             userUid: currentUserData.uid,
             userEmail: currentUserData.email,
@@ -3619,11 +3646,16 @@
             method: method,
             address: address,
             status: "pending",
+            type: "withdraw",
             createdAt: new Date().toISOString()
           };
           
-          const docRef = await db.collection(TRANSACTIONS_COLLECTION).add(txData);
+          console.log('Withdrawal data:', txData);
+          
+          const docRef = await db.collection('transactions').add(txData);
           const txId = docRef.id;
+          
+          console.log('✅ Withdrawal transaction created with ID:', txId);
 
           const historyEntry = {
             type: "withdraw",
@@ -3633,17 +3665,22 @@
             status: "pending",
             txId: txId
           };
-          await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
+          
+          const userRef = db.collection('users').doc(currentUserData.uid);
+          await userRef.update({
             history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
           });
 
+          console.log('✅ User history updated with withdrawal ID:', txId);
           showToast("Withdrawal request submitted. Awaiting admin approval.", "info");
+          
           document.getElementById("withdrawForm").reset();
           document.getElementById("cashappField").style.display = "none";
           document.getElementById("paypalField").style.display = "none";
+          
         } catch (error) {
-          console.error('Withdrawal error:', error);
-          showToast("Failed to submit withdrawal. Please try again.", "error");
+          console.error('❌ Withdrawal error:', error);
+          showToast("Failed to submit withdrawal: " + error.message, "error");
         }
       }
 
@@ -4247,3 +4284,4 @@
     </script>
   </body>
 </html>
+```
