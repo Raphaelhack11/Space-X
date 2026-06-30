@@ -6,6 +6,10 @@
     <title>Space X — Premium Structured Investing</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
       :root {
         --void: #0A0F1C;
@@ -2054,6 +2058,25 @@
         background: rgba(239, 68, 68, 0.15);
         border: 1px solid rgba(239, 68, 68, 0.3);
       }
+      /* Loading state */
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--panel-border);
+        border-top-color: var(--cyan);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .auth-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: var(--text-mute);
+        font-size: .9rem;
+        padding: 20px;
+      }
     </style>
   </head>
   <body>
@@ -2374,7 +2397,7 @@
           <span class="brand-text">Admin Panel</span>
         </div>
         <div class="dash-nav-right">
-          <button class="icon-btn" title="Log out" onclick="handleAdminLogout()">
+          <button class="icon-btn" title="Log out" onclick="handleLogout()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
             </svg>
@@ -2432,7 +2455,7 @@
           <div class="admin-section">
             <h3>💰 Pending Deposits</h3>
             <div id="pendingDepositsList">
-              <p style="color:var(--text-mute);">No pending deposits.</p>
+              <p style="color:var(--text-mute);">Loading pending deposits...</p>
             </div>
           </div>
 
@@ -2440,7 +2463,7 @@
           <div class="admin-section">
             <h3>🏦 Pending Withdrawals</h3>
             <div id="pendingWithdrawalsList">
-              <p style="color:var(--text-mute);">No pending withdrawals.</p>
+              <p style="color:var(--text-mute);">Loading pending withdrawals...</p>
             </div>
           </div>
 
@@ -2458,7 +2481,9 @@
                     <th>Joined</th>
                   </tr>
                 </thead>
-                <tbody id="adminUsersTable"></tbody>
+                <tbody id="adminUsersTable">
+                  <tr><td colspan="5" style="text-align:center;color:var(--text-mute);">Loading users...</td></tr>
+                </tbody>
               </table>
             </div>
           </div>
@@ -2735,8 +2760,47 @@
     </div>
 
     <script>
-      /* ---------- DATA ---------- */
-      let PLANS = [
+      // ============================================================
+      // FIREBASE CONFIG & INITIALIZATION
+      // ============================================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyCvQutyyj9IEgZPN9L0OF9VJ6XeC7POpco",
+        authDomain: "ed-sheeran-loop-tour.firebaseapp.com",
+        projectId: "ed-sheeran-loop-tour",
+        storageBucket: "ed-sheeran-loop-tour.firebasestorage.app",
+        messagingSenderId: "279691528850",
+        appId: "1:279691528850:web:bdd8b584a8d35d482fb44b",
+        measurementId: "G-N4MZYREF5G"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+
+      // Enable offline persistence
+      db.enablePersistence({ synchronizeTabs: true })
+        .catch(err => console.warn('Firestore persistence:', err));
+
+      // ============================================================
+      // DATA REFERENCES
+      // ============================================================
+      const USERS_COLLECTION = 'users';
+      const TRANSACTIONS_COLLECTION = 'transactions';
+      const PLANS_COLLECTION = 'plans';
+      const ADMIN_COLLECTION = 'admin';
+
+      // ============================================================
+      // GLOBAL STATE
+      // ============================================================
+      let currentUserData = null;
+      let currentUserEmail = null;
+      let isAdmin = false;
+      let unsubscribeFunctions = [];
+
+      // ============================================================
+      // DATA - Default Plans (will be seeded if empty)
+      // ============================================================
+      const DEFAULT_PLANS = [
         { id: 1, name: "Diamond VIP", amount: 10000, durationLabel: "1 week", durationDays: 7, rate: 100, featured: true },
         { id: 2, name: "Platinum Premium", amount: 8000, durationLabel: "2 weeks", durationDays: 14, rate: 100, featured: true },
         { id: 3, name: "Gold Elite", amount: 6000, durationLabel: "3 weeks", durationDays: 21, rate: 90, featured: true },
@@ -2749,6 +2813,7 @@
         { id: 10, name: "Starter Micro", amount: 250, durationLabel: "1 month", durationDays: 30, rate: 50, featured: false },
       ];
       const TOP3_IDS = [1, 2, 3];
+
       const US_STATES = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "District of Columbia"];
       const WALLETS = { Bitcoin: "bc1qm4l45yuppla9d7a7vv7dz0cxvl55sqacx5mhgj", Ethereum: "0x5778e621aED2753102f6d316aB734Fd0fD413cdA" };
       const BG_PLACEHOLDERS = [
@@ -2758,7 +2823,6 @@
         "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(34, 211, 238, 0.08) 100%)",
       ];
 
-      // Updated testimonials with images - full card background images
       const TESTIMONIALS = [
         { 
           name: "Marcus Olin", 
@@ -2783,131 +2847,22 @@
         },
       ];
 
-      const ADMIN_CREDENTIALS = { email: "admin@gmail.com", password: "admin@123" };
+      const ADMIN_EMAIL = "admin@gmail.com";
       const GIVEAWAY_ID = "Elon-Space-X";
       const BONUS_AMOUNT = 10000;
       const MIN_WITHDRAWAL = 15000;
 
-      /* ---------- STATE HELPERS ---------- */
-      const LS_USERS = "raph_users";
-      const LS_SESSION = "raph_session";
-      const LS_PLANS = "raph_plans";
-      const LS_TRANSACTIONS = "raph_transactions";
-
-      function getUsers() { try { return JSON.parse(localStorage.getItem(LS_USERS)) || {}; } catch (e) { return {}; } }
-      function saveUsers(u) { localStorage.setItem(LS_USERS, JSON.stringify(u)); 
-        // Broadcast the change to other tabs/windows
-        try {
-          const bc = new BroadcastChannel('spacex_channel');
-          bc.postMessage({ type: 'users_updated', data: u });
-          bc.close();
-        } catch(e) {}
-      }
-      function getSession() { return localStorage.getItem(LS_SESSION); }
-      function setSession(email) { localStorage.setItem(LS_SESSION, email); }
-      function clearSession() { localStorage.removeItem(LS_SESSION); }
-      function currentUser() { const e = getSession(); if (!e) return null; const users = getUsers(); return users[e] || null; }
-      function saveCurrentUser(userObj) { const users = getUsers(); users[userObj.email] = userObj; saveUsers(users); }
-
-      function getPlans() { try { const p = JSON.parse(localStorage.getItem(LS_PLANS)); if (p && p.length) return p; } catch (e) {} return PLANS; }
-      function savePlans(p) { localStorage.setItem(LS_PLANS, JSON.stringify(p)); 
-        try {
-          const bc = new BroadcastChannel('spacex_channel');
-          bc.postMessage({ type: 'plans_updated', data: p });
-          bc.close();
-        } catch(e) {}
-      }
-
-      function getTransactions() { try { return JSON.parse(localStorage.getItem(LS_TRANSACTIONS)) || []; } catch (e) { return []; } }
-      function saveTransactions(t) { localStorage.setItem(LS_TRANSACTIONS, JSON.stringify(t));
-        try {
-          const bc = new BroadcastChannel('spacex_channel');
-          bc.postMessage({ type: 'transactions_updated', data: t });
-          bc.close();
-        } catch(e) {}
-      }
-
+      // ============================================================
+      // HELPER FUNCTIONS
+      // ============================================================
       function fmtMoney(n) { return "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
       function planById(id, plans) { return plans.find(p => p.id === id); }
       function payout(plan) { return plan.amount * (1 + plan.rate / 100); }
       function profit(plan) { return plan.amount * (plan.rate / 100); }
 
-      /* ---------- CROSS-TAB SYNC ---------- */
-      function setupCrossTabSync() {
-        try {
-          const bc = new BroadcastChannel('spacex_channel');
-          bc.onmessage = function(event) {
-            const data = event.data;
-            if (data.type === 'users_updated') {
-              // Reload users data
-              renderAdminPanel();
-              updateAboutStats();
-              if (currentUser()) renderDashboard();
-            } else if (data.type === 'transactions_updated') {
-              renderAdminPanel();
-              if (currentUser()) renderDashboard();
-            } else if (data.type === 'plans_updated') {
-              renderAdminPanel();
-              renderLandingPlans();
-              renderDashPlansPreview();
-              renderAllPlans();
-              populateCalcDropdown();
-            }
-          };
-          // Also listen for storage events (for when localStorage changes from other tabs)
-          window.addEventListener('storage', function(e) {
-            if (e.key === LS_USERS || e.key === LS_TRANSACTIONS || e.key === LS_PLANS) {
-              renderAdminPanel();
-              updateAboutStats();
-              if (currentUser()) renderDashboard();
-            }
-          });
-        } catch(e) {
-          // Fallback: use storage event listener only
-          window.addEventListener('storage', function(e) {
-            if (e.key === LS_USERS || e.key === LS_TRANSACTIONS || e.key === LS_PLANS) {
-              renderAdminPanel();
-              updateAboutStats();
-              if (currentUser()) renderDashboard();
-            }
-          });
-        }
-      }
-
-      /* ---------- LIVE COUNTERS ---------- */
-      function startLiveCounters() {
-        // User counter: slowly increment from 579,739
-        let userCount = 579739;
-        const userEl = document.getElementById('liveUserCount');
-        if (userEl) {
-          setInterval(() => {
-            userCount += Math.floor(Math.random() * 3) + 1;
-            userEl.textContent = userCount.toLocaleString();
-          }, 8000);
-        }
-
-        // Portfolio value: slowly grow from $2,000,000
-        let portfolioValue = 2000000;
-        const portfolioEl = document.getElementById('livePortfolioValue');
-        if (portfolioEl) {
-          setInterval(() => {
-            portfolioValue += Math.floor(Math.random() * 50) + 10;
-            portfolioEl.textContent = '$' + portfolioValue.toLocaleString();
-          }, 5000);
-        }
-
-        // Invested amount: slowly grow from $800,000
-        let investedAmount = 800000;
-        const investedEl = document.getElementById('liveInvestedAmount');
-        if (investedEl) {
-          setInterval(() => {
-            investedAmount += Math.floor(Math.random() * 30) + 5;
-            investedEl.textContent = '$' + investedAmount.toLocaleString();
-          }, 6000);
-        }
-      }
-
-      /* ---------- TOAST ---------- */
+      // ============================================================
+      // TOAST
+      // ============================================================
       function showToast(msg, type = "info") {
         const stack = document.getElementById("toast-stack");
         const el = document.createElement("div");
@@ -2920,7 +2875,9 @@
         }, 3400);
       }
 
-      /* ---------- CLIPBOARD ---------- */
+      // ============================================================
+      // CLIPBOARD
+      // ============================================================
       function copyWalletAddress() {
         const addressText = document.getElementById("depositWalletAddress").textContent;
         const textArea = document.createElement("textarea");
@@ -2938,7 +2895,9 @@
         document.body.removeChild(textArea);
       }
 
-      /* ---------- STARFIELD ---------- */
+      // ============================================================
+      // STARFIELD
+      // ============================================================
       (function starfield() {
         const canvas = document.getElementById("starfield");
         const ctx = canvas.getContext("2d");
@@ -2975,13 +2934,17 @@
         requestAnimationFrame(draw);
       })();
 
-      /* ---------- NAV SCROLL ---------- */
+      // ============================================================
+      // NAV SCROLL
+      // ============================================================
       window.addEventListener("scroll", () => {
         const nav = document.getElementById("landingNav");
         if (nav) nav.classList.toggle("scrolled", window.scrollY > 30);
       });
 
-      /* ---------- REVEAL ---------- */
+      // ============================================================
+      // REVEAL
+      // ============================================================
       const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("in"); });
       }, { threshold: .15 });
@@ -2994,16 +2957,109 @@
         setTimeout(() => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
       }
 
-      /* ---------- DRAWER ---------- */
+      // ============================================================
+      // DRAWER
+      // ============================================================
       function openDrawer() { document.getElementById("drawer").classList.add("open");
         document.getElementById("scrim").classList.add("open"); }
       function closeDrawer() { document.getElementById("drawer").classList.remove("open");
         document.getElementById("scrim").classList.remove("open"); }
 
-      /* ---------- PLAN CARD RENDERING ---------- */
+      // ============================================================
+      // NAVIGATION
+      // ============================================================
+      function navTo(page) {
+        document.getElementById("page-landing").classList.toggle("hidden", page !== "landing");
+        document.getElementById("page-login").classList.toggle("hidden", page !== "login");
+        document.getElementById("page-signup").classList.toggle("hidden", page !== "signup");
+        document.getElementById("page-dashboard").classList.toggle("hidden", page !== "dashboard");
+        document.getElementById("page-admin").classList.toggle("hidden", page !== "admin");
+        window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+        if (page === "landing") setTimeout(observeReveals, 50);
+        if (page === "admin") renderAdminPanel();
+      }
+
+      function openAuth(which) {
+        closeDrawer();
+        if (which === "login") navTo("login");
+        if (which === "signup") navTo("signup");
+      }
+
+      function toggleEye(inputId, btn) {
+        const input = document.getElementById(inputId);
+        input.type = input.type === "password" ? "text" : "password";
+      }
+
+      // ============================================================
+      // STATE SELECT
+      // ============================================================
+      function populateStates() {
+        const sel = document.getElementById("suState");
+        US_STATES.forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = s;
+          sel.appendChild(opt);
+        });
+      }
+
+      // ============================================================
+      // PASSWORD METER
+      // ============================================================
+      function pwScore(pw) {
+        let score = 0;
+        if (pw.length >= 8) score++;
+        if (pw.length >= 12) score++;
+        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+        if (/[0-9]/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+        return Math.min(score, 4);
+      }
+
+      function updatePwMeter() {
+        const pw = document.getElementById("suPassword").value;
+        const score = pw.length === 0 ? 0 : Math.max(1, pwScore(pw));
+        const bars = document.querySelectorAll("#pwTrack i");
+        const colors = ["var(--danger)", "var(--warn)", "var(--cyan)", "var(--success)"];
+        const labels = ["Weak", "Fair", "Good", "Strong"];
+        bars.forEach((b, i) => { b.style.background = i < score ? colors[score - 1] : "var(--panel-border)"; });
+        document.getElementById("pwLabel").textContent = pw.length === 0 ? "Password strength" : labels[score - 1];
+      }
+
+      // ============================================================
+      // WITHDRAW FIELD TOGGLE
+      // ============================================================
+      function toggleWithdrawFields() {
+        const method = document.getElementById("withdrawMethod").value;
+        document.getElementById("cashappField").style.display = method === "cashapp" ? "block" : "none";
+        document.getElementById("paypalField").style.display = method === "paypal" ? "block" : "none";
+      }
+
+      // ============================================================
+      // SEED PLANS IF EMPTY
+      // ============================================================
+      async function seedPlansIfEmpty() {
+        try {
+          const snapshot = await db.collection(PLANS_COLLECTION).get();
+          if (snapshot.empty) {
+            const batch = db.batch();
+            DEFAULT_PLANS.forEach(plan => {
+              const ref = db.collection(PLANS_COLLECTION).doc(String(plan.id));
+              batch.set(ref, plan);
+            });
+            await batch.commit();
+            console.log('Default plans seeded');
+          }
+        } catch (e) {
+          console.error('Error seeding plans:', e);
+        }
+      }
+
+      // ============================================================
+      // PLAN RENDERING
+      // ============================================================
       function planCardHTML(plan, opts = {}) {
         const isTop3 = TOP3_IDS.includes(plan.id);
-        const plans = getPlans();
         return `
           <div class="plan-card ${isTop3 ? 'featured' : ''}">
             ${isTop3 ? `<div class="plan-badge-container"><span class="plan-badge">Fast-Growing Investors' Choice</span></div>` : ''}
@@ -3019,25 +3075,25 @@
           </div>`;
       }
 
-      function renderLandingPlans() {
-        const plans = getPlans();
+      function renderLandingPlans(plans) {
         const grid = document.getElementById("landingPlansGrid");
-        grid.innerHTML = TOP3_IDS.map(id => planCardHTML(planById(id, plans))).join("");
+        const topPlans = plans.filter(p => TOP3_IDS.includes(p.id));
+        grid.innerHTML = topPlans.map(p => planCardHTML(p)).join("");
       }
 
-      function renderDashPlansPreview() {
-        const plans = getPlans();
+      function renderDashPlansPreview(plans) {
         const grid = document.getElementById("dashPlansPreview");
         grid.innerHTML = plans.map(p => planCardHTML(p)).join("");
       }
 
-      function renderAllPlans() {
-        const plans = getPlans();
+      function renderAllPlans(plans) {
         const grid = document.getElementById("allPlansGrid");
         grid.innerHTML = plans.map(p => planCardHTML(p)).join("");
       }
 
-      /* ---------- TESTIMONIALS ---------- */
+      // ============================================================
+      // TESTIMONIALS
+      // ============================================================
       function renderTestimonials() {
         const track = document.getElementById("testiTrack");
         track.innerHTML = TESTIMONIALS.map((t, i) => `
@@ -3064,7 +3120,9 @@
         document.getElementById("contactWrap").style.background = "linear-gradient(135deg, var(--void) 0%, var(--void-2) 100%)";
       }
 
-      /* ---------- TICKER ---------- */
+      // ============================================================
+      // TICKER
+      // ============================================================
       function renderTicker() {
         const items = [
           `<span class="ticker-item"><span class="blip"></span> Fast-Growing Choice: <b>Diamond VIP · +100% return</b></span>`,
@@ -3076,70 +3134,42 @@
         document.getElementById("tickerEl").innerHTML = items.join("") + items.join("");
       }
 
-      /* ---------- NAV ---------- */
-      function navTo(page) {
-        document.getElementById("page-landing").classList.toggle("hidden", page !== "landing");
-        document.getElementById("page-login").classList.toggle("hidden", page !== "login");
-        document.getElementById("page-signup").classList.toggle("hidden", page !== "signup");
-        document.getElementById("page-dashboard").classList.toggle("hidden", page !== "dashboard");
-        document.getElementById("page-admin").classList.toggle("hidden", page !== "admin");
-        window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-        if (page === "landing") setTimeout(observeReveals, 50);
-        if (page === "admin") renderAdminPanel();
+      // ============================================================
+      // LIVE COUNTERS (UI only - decorative)
+      // ============================================================
+      function startLiveCounters() {
+        let userCount = 579739;
+        const userEl = document.getElementById('liveUserCount');
+        if (userEl) {
+          setInterval(() => {
+            userCount += Math.floor(Math.random() * 3) + 1;
+            userEl.textContent = userCount.toLocaleString();
+          }, 8000);
+        }
+
+        let portfolioValue = 2000000;
+        const portfolioEl = document.getElementById('livePortfolioValue');
+        if (portfolioEl) {
+          setInterval(() => {
+            portfolioValue += Math.floor(Math.random() * 50) + 10;
+            portfolioEl.textContent = '$' + portfolioValue.toLocaleString();
+          }, 5000);
+        }
+
+        let investedAmount = 800000;
+        const investedEl = document.getElementById('liveInvestedAmount');
+        if (investedEl) {
+          setInterval(() => {
+            investedAmount += Math.floor(Math.random() * 30) + 5;
+            investedEl.textContent = '$' + investedAmount.toLocaleString();
+          }, 6000);
+        }
       }
 
-      function openAuth(which) {
-        closeDrawer();
-        if (which === "login") navTo("login");
-        if (which === "signup") navTo("signup");
-      }
-
-      function toggleEye(inputId, btn) {
-        const input = document.getElementById(inputId);
-        input.type = input.type === "password" ? "text" : "password";
-      }
-
-      /* ---------- STATE SELECT ---------- */
-      function populateStates() {
-        const sel = document.getElementById("suState");
-        US_STATES.forEach(s => {
-          const opt = document.createElement("option");
-          opt.value = s;
-          opt.textContent = s;
-          sel.appendChild(opt);
-        });
-      }
-
-      /* ---------- PASSWORD METER ---------- */
-      function pwScore(pw) {
-        let score = 0;
-        if (pw.length >= 8) score++;
-        if (pw.length >= 12) score++;
-        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
-        if (/[0-9]/.test(pw)) score++;
-        if (/[^A-Za-z0-9]/.test(pw)) score++;
-        return Math.min(score, 4);
-      }
-
-      function updatePwMeter() {
-        const pw = document.getElementById("suPassword").value;
-        const score = pw.length === 0 ? 0 : Math.max(1, pwScore(pw));
-        const bars = document.querySelectorAll("#pwTrack i");
-        const colors = ["var(--danger)", "var(--warn)", "var(--cyan)", "var(--success)"];
-        const labels = ["Weak", "Fair", "Good", "Strong"];
-        bars.forEach((b, i) => { b.style.background = i < score ? colors[score - 1] : "var(--panel-border)"; });
-        document.getElementById("pwLabel").textContent = pw.length === 0 ? "Password strength" : labels[score - 1];
-      }
-
-      /* ---------- WITHDRAW FIELD TOGGLE ---------- */
-      function toggleWithdrawFields() {
-        const method = document.getElementById("withdrawMethod").value;
-        document.getElementById("cashappField").style.display = method === "cashapp" ? "block" : "none";
-        document.getElementById("paypalField").style.display = method === "paypal" ? "block" : "none";
-      }
-
-      /* ---------- SIGNUP ---------- */
-      function handleSignup(e) {
+      // ============================================================
+      // AUTH - SIGNUP
+      // ============================================================
+      async function handleSignup(e) {
         e.preventDefault();
         const name = document.getElementById("suName").value.trim();
         const email = document.getElementById("suEmail").value.trim().toLowerCase();
@@ -3156,22 +3186,16 @@
           showToast("Password must reach at least 8 characters", "error");
           return;
         }
-        const users = getUsers();
-        if (users[email]) {
-          showToast("An investor profile already exists with this email address", "error");
-          return;
-        }
 
         const btn = document.getElementById("signupBtn");
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span> Creating account...`;
+        btn.innerHTML = `<span class="loading-spinner"></span> Creating account...`;
 
-        const overlay = document.getElementById("loadOverlay");
-        const overlayTxt = document.getElementById("loadOverlayText");
-        overlay.classList.remove("hidden");
-        overlayTxt.textContent = "Creating account...";
+        try {
+          // Create auth user
+          const userCred = await auth.createUserWithEmailAndPassword(email, password);
+          const uid = userCred.user.uid;
 
-        setTimeout(() => {
           let balance = 0;
           let giveawayValid = false;
           if (giveaway === GIVEAWAY_ID) {
@@ -3181,115 +3205,162 @@
             showToast("Invalid Bonus ID. Please check and try again.", "error");
             btn.disabled = false;
             btn.innerHTML = "Sign up";
-            overlay.classList.add("hidden");
             return;
           }
 
-          const newUser = {
+          const userData = {
+            uid,
             name,
             email,
             phone,
             state,
-            password,
             giveaway: giveaway || null,
             giveawayValid,
             balance: balance,
             activePlan: null,
             history: [{ type: "info", label: "Space X portfolio ledger initialized", date: new Date().toISOString(), amount: 0, status: "approved" }],
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            isAdmin: false
           };
-          saveCurrentUser(newUser);
-          setSession(email);
+
+          await db.collection(USERS_COLLECTION).doc(uid).set(userData);
+          
           btn.disabled = false;
           btn.innerHTML = "Sign up";
           document.getElementById("signupForm").reset();
-          overlay.classList.add("hidden");
-          enterDashboard();
+          
           showToast(giveawayValid ? `Sign up successful! $${BONUS_AMOUNT.toLocaleString()} bonus credited!` : "Sign up successful!", "success");
-        }, 3000);
+          
+          // Auto-login and redirect
+          await enterDashboard(uid);
+          
+        } catch (error) {
+          console.error('Signup error:', error);
+          showToast(error.message || "Signup failed. Please try again.", "error");
+          btn.disabled = false;
+          btn.innerHTML = "Sign up";
+        }
       }
 
-      /* ---------- LOGIN ---------- */
-      function handleLogin(e) {
+      // ============================================================
+      // AUTH - LOGIN
+      // ============================================================
+      async function handleLogin(e) {
         e.preventDefault();
         const email = document.getElementById("loginEmail").value.trim().toLowerCase();
         const password = document.getElementById("loginPassword").value;
 
-        if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-          setSession("admin");
-          navTo("admin");
-          renderAdminPanel();
+        const btn = document.getElementById("loginBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="loading-spinner"></span> Logging in...`;
+
+        try {
+          const userCred = await auth.signInWithEmailAndPassword(email, password);
+          const uid = userCred.user.uid;
+
+          // Check if admin
+          if (email === ADMIN_EMAIL) {
+            isAdmin = true;
+            navTo("admin");
+            renderAdminPanel();
+            showToast("Welcome Admin!", "success");
+          } else {
+            isAdmin = false;
+            await enterDashboard(uid);
+          }
+          
           document.getElementById("loginForm").reset();
-          showToast("Welcome Admin!", "success");
-          return;
+        } catch (error) {
+          console.error('Login error:', error);
+          showToast(error.message || "Login failed. Please check your credentials.", "error");
         }
-
-        const users = getUsers();
-        const user = users[email];
-
-        if (!user || user.password !== password) {
-          showToast("Incorrect email address or password parameter", "error");
-          return;
-        }
-        setSession(email);
-        document.getElementById("loginForm").reset();
-        enterDashboard();
-        showToast("Login successful", "success");
+        btn.disabled = false;
+        btn.innerHTML = "Log in";
       }
 
-      /* ---------- LOGOUT ---------- */
-      function handleLogout() {
-        clearSession();
+      // ============================================================
+      // LOGOUT
+      // ============================================================
+      async function handleLogout() {
+        // Unsubscribe from all listeners
+        unsubscribeFunctions.forEach(unsub => {
+          try { unsub(); } catch(e) {}
+        });
+        unsubscribeFunctions = [];
+        
+        await auth.signOut();
+        currentUserData = null;
+        currentUserEmail = null;
+        isAdmin = false;
         navTo("landing");
         showToast("You have been successfully logged out", "info");
         setTimeout(observeReveals, 50);
       }
 
-      function handleAdminLogout() {
-        clearSession();
-        navTo("landing");
-        showToast("Logged out of admin panel", "info");
-        setTimeout(observeReveals, 50);
-      }
-
-      /* ---------- DASHBOARD ---------- */
-      function enterDashboard() {
+      // ============================================================
+      // ENTER DASHBOARD
+      // ============================================================
+      async function enterDashboard(uid) {
         navTo("dashboard");
         dashGo("home");
-        renderDashboard();
+        
+        // Set up real-time user listener
+        setupUserListener(uid);
       }
 
+      // ============================================================
+      // REAL-TIME USER LISTENER
+      // ============================================================
+      function setupUserListener(uid) {
+        // Clean up old listeners
+        unsubscribeFunctions.forEach(unsub => {
+          try { unsub(); } catch(e) {}
+        });
+        unsubscribeFunctions = [];
+
+        const unsub = db.collection(USERS_COLLECTION).doc(uid).onSnapshot((doc) => {
+          if (doc.exists) {
+            currentUserData = { id: doc.id, ...doc.data() };
+            currentUserEmail = currentUserData.email;
+            renderDashboard();
+            updateAboutStats();
+          }
+        }, (error) => {
+          console.error('User listener error:', error);
+        });
+        unsubscribeFunctions.push(unsub);
+      }
+
+      // ============================================================
+      // RENDER DASHBOARD
+      // ============================================================
       function renderDashboard() {
-        const user = currentUser();
-        if (!user) return;
+        if (!currentUserData) return;
+        const user = currentUserData;
         document.getElementById("dashHelloName").textContent = `Welcome back, ${user.name.split(' ')[0]}`;
         document.getElementById("balanceAmount").textContent = fmtMoney(user.balance);
         document.getElementById("fundBalancePreview").textContent = fmtMoney(user.balance);
-        renderDashPlansPreview();
-        renderAllPlans();
         renderActivePlan();
         renderHistory();
         renderSettings();
-        updateAboutStats();
       }
 
-      /* ---------- UPDATE ABOUT STATS ---------- */
+      // ============================================================
+      // UPDATE ABOUT STATS
+      // ============================================================
       function updateAboutStats() {
-        const users = getUsers();
-        const totalUsers = Object.keys(users).length;
-        let totalInvested = 0;
-        Object.values(users).forEach(u => {
-          if (u.activePlan) totalInvested += u.activePlan.amount;
-        });
-        // Update admin panel stats too
-        const totalUsersEl = document.getElementById('totalUsers');
-        if (totalUsersEl) totalUsersEl.textContent = totalUsers;
-        const totalInvestedEl = document.getElementById('totalInvested');
-        if (totalInvestedEl) totalInvestedEl.textContent = fmtMoney(totalInvested);
+        // This is now handled by Firestore listeners
+        // We'll update admin stats via the admin panel render
+        if (document.getElementById('page-admin') && !document.getElementById('page-admin').classList.contains('hidden')) {
+          renderAdminPanel();
+        }
       }
 
-      /* ---------- ACTIVE PLAN ---------- */
+      // ============================================================
+      // ACTIVE PLAN
+      // ============================================================
       function planProgress(active) {
+        if (!active) return 0;
         const start = new Date(active.startDate).getTime();
         const end = new Date(active.endDate).getTime();
         const now = Date.now();
@@ -3297,7 +3368,7 @@
       }
 
       function renderActivePlan() {
-        const user = currentUser();
+        const user = currentUserData;
         const slot = document.getElementById("activePlanSlot");
         if (!user || !user.activePlan) { slot.innerHTML = ""; return; }
         const ap = user.activePlan;
@@ -3318,25 +3389,37 @@
             </div>`;
       }
 
-      /* ---------- INVEST ---------- */
-      function investNow(planId) {
-        const user = currentUser();
-        if (!user) {
+      // ============================================================
+      // INVEST NOW
+      // ============================================================
+      async function investNow(planId) {
+        if (!currentUserData) {
           showToast("Please log in with your credentials to acquire this plan", "info");
           openAuth("login");
           return;
         }
-        const plans = getPlans();
+
+        // Get plans from Firestore
+        const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
+        const plans = [];
+        plansSnapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
         const plan = planById(planId, plans);
-        if (user.balance < plan.amount) {
+        
+        if (!plan) {
+          showToast("Plan not found", "error");
+          return;
+        }
+
+        if (currentUserData.balance < plan.amount) {
           showToast("Insufficient balance", "error");
           openDepositWithdraw("deposit");
           return;
         }
+
         const startDate = new Date();
         const endDate = new Date(startDate.getTime() + plan.durationDays * 86400000);
-        user.balance -= plan.amount;
-        user.activePlan = {
+        const newBalance = currentUserData.balance - plan.amount;
+        const activePlan = {
           name: plan.name,
           amount: plan.amount,
           rate: plan.rate,
@@ -3344,13 +3427,30 @@
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString()
         };
-        user.history.unshift({ type: "invest", label: `Allocated in ${plan.name}`, date: new Date().toISOString(), amount: -plan.amount, status: "approved" });
-        saveCurrentUser(user);
-        renderDashboard();
-        showToast(`Success — allocated portfolio capital into ${plan.name}`, "success");
+        const historyEntry = { 
+          type: "invest", 
+          label: `Allocated in ${plan.name}`, 
+          date: new Date().toISOString(), 
+          amount: -plan.amount, 
+          status: "approved" 
+        };
+
+        try {
+          await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
+            balance: newBalance,
+            activePlan: activePlan,
+            history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+          });
+          showToast(`Success — allocated portfolio capital into ${plan.name}`, "success");
+        } catch (error) {
+          console.error('Invest error:', error);
+          showToast("Failed to invest. Please try again.", "error");
+        }
       }
 
-      /* ---------- DASH VIEWS ---------- */
+      // ============================================================
+      // DASH VIEWS
+      // ============================================================
       function dashGo(view) {
         ["home", "plans", "fund", "history", "settings"].forEach(v => {
           const el = document.getElementById("dash" + v.charAt(0).toUpperCase() + v.slice(1));
@@ -3362,15 +3462,38 @@
         if (view === "home") renderActivePlan();
         if (view === "settings") renderSettings();
         if (view === "history") renderHistory();
+        if (view === "plans") loadPlans();
+        if (view === "fund") {
+          document.getElementById("fundBalancePreview").textContent = currentUserData ? fmtMoney(currentUserData.balance) : "$0.00";
+        }
       }
 
-      /* ---------- DEPOSIT / WITHDRAW ---------- */
+      // ============================================================
+      // LOAD PLANS FROM FIRESTORE
+      // ============================================================
+      async function loadPlans() {
+        try {
+          const snapshot = await db.collection(PLANS_COLLECTION).get();
+          const plans = [];
+          snapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
+          plans.sort((a, b) => a.id - b.id);
+          renderDashPlansPreview(plans);
+          renderAllPlans(plans);
+          renderLandingPlans(plans);
+          populateCalcDropdown(plans);
+        } catch (error) {
+          console.error('Error loading plans:', error);
+        }
+      }
+
+      // ============================================================
+      // DEPOSIT / WITHDRAW
+      // ============================================================
       let pendingDepositAmount = 0;
       let pendingDepositCrypto = "Bitcoin";
-      let pendingDepositUser = null;
 
       function openDepositWithdraw(tab) {
-        if (!currentUser()) { openAuth("login"); return; }
+        if (!currentUserData) { openAuth("login"); return; }
         dashGo("fund");
         setFundTab(tab);
       }
@@ -3412,7 +3535,6 @@
 
         pendingDepositAmount = amt;
         pendingDepositCrypto = crypto;
-        pendingDepositUser = currentUser();
 
         document.getElementById("targetMethodLabel").textContent = crypto;
         document.getElementById("targetAmountLabel").textContent = fmtMoney(amt) + " USD equivalent";
@@ -3429,35 +3551,43 @@
         document.getElementById("depositFormStep1").classList.remove("hidden");
       }
 
-      function confirmPaymentAndLoad() {
+      async function confirmPaymentAndLoad() {
         document.getElementById("depositFormStep2").classList.add("hidden");
         document.getElementById("depositFormStep3").classList.remove("hidden");
 
-        const user = currentUser();
-        if (user) {
-          const transactions = getTransactions();
-          const newTx = {
-            id: Date.now(),
-            type: "deposit",
-            userEmail: user.email,
-            userName: user.name,
-            amount: pendingDepositAmount,
-            crypto: pendingDepositCrypto,
-            status: "pending",
-            createdAt: new Date().toISOString()
-          };
-          transactions.push(newTx);
-          saveTransactions(transactions);
-          user.history.unshift({
-            type: "deposit",
-            label: `Deposit Request: ${fmtMoney(pendingDepositAmount)} ${pendingDepositCrypto}`,
-            date: new Date().toISOString(),
-            amount: pendingDepositAmount,
-            status: "pending",
-            txId: newTx.id
-          });
-          saveCurrentUser(user);
-          showToast("Deposit request submitted. Awaiting admin approval.", "info");
+        if (currentUserData) {
+          try {
+            const txData = {
+              id: Date.now(),
+              type: "deposit",
+              userUid: currentUserData.uid,
+              userEmail: currentUserData.email,
+              userName: currentUserData.name,
+              amount: pendingDepositAmount,
+              crypto: pendingDepositCrypto,
+              status: "pending",
+              createdAt: new Date().toISOString()
+            };
+            await db.collection(TRANSACTIONS_COLLECTION).add(txData);
+            
+            // Add to user history
+            const historyEntry = {
+              type: "deposit",
+              label: `Deposit Request: ${fmtMoney(pendingDepositAmount)} ${pendingDepositCrypto}`,
+              date: new Date().toISOString(),
+              amount: pendingDepositAmount,
+              status: "pending",
+              txId: txData.id
+            };
+            await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
+              history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+            });
+            
+            showToast("Deposit request submitted. Awaiting admin approval.", "info");
+          } catch (error) {
+            console.error('Deposit submission error:', error);
+            showToast("Failed to submit deposit. Please try again.", "error");
+          }
         }
 
         setTimeout(() => {
@@ -3465,18 +3595,16 @@
           document.getElementById("depositFormStep1").classList.remove("hidden");
           document.getElementById("step1Form").reset();
           dashGo("home");
-          renderDashboard();
           showToast("Your deposit is pending admin approval. You'll be notified once processed.", "info");
         }, 10000);
       }
 
-      function executeWithdraw(e) {
+      async function executeWithdraw(e) {
         e.preventDefault();
         const method = document.getElementById("withdrawMethod").value;
         const amt = parseFloat(document.getElementById("withdrawAmount").value);
 
-        const user = currentUser();
-        if (!user) return;
+        if (!currentUserData) return;
 
         if (!method) {
           showToast("Please select a payment method", "error");
@@ -3496,50 +3624,55 @@
           showToast(`Minimum withdrawal is $${MIN_WITHDRAWAL.toLocaleString()}`, "error");
           return;
         }
-        if (amt > user.balance) {
+        if (amt > currentUserData.balance) {
           showToast("Insufficient capital in portfolio balance", "error");
           return;
         }
 
-        // Create pending withdrawal transaction
-        const transactions = getTransactions();
-        const newTx = {
-          id: Date.now(),
-          type: "withdraw",
-          userEmail: user.email,
-          userName: user.name,
-          amount: amt,
-          method: method,
-          address: address,
-          status: "pending",
-          createdAt: new Date().toISOString()
-        };
-        transactions.push(newTx);
-        saveTransactions(transactions);
+        try {
+          const txData = {
+            id: Date.now(),
+            type: "withdraw",
+            userUid: currentUserData.uid,
+            userEmail: currentUserData.email,
+            userName: currentUserData.name,
+            amount: amt,
+            method: method,
+            address: address,
+            status: "pending",
+            createdAt: new Date().toISOString()
+          };
+          await db.collection(TRANSACTIONS_COLLECTION).add(txData);
 
-        // Add to user history as pending
-        user.history.unshift({
-          type: "withdraw",
-          label: `Withdrawal Request: ${fmtMoney(amt)} via ${method}`,
-          date: new Date().toISOString(),
-          amount: -amt,
-          status: "pending",
-          txId: newTx.id
-        });
-        saveCurrentUser(user);
-        showToast("Withdrawal request submitted. Awaiting admin approval.", "info");
-        document.getElementById("withdrawForm").reset();
-        document.getElementById("cashappField").style.display = "none";
-        document.getElementById("paypalField").style.display = "none";
-        renderDashboard();
+          const historyEntry = {
+            type: "withdraw",
+            label: `Withdrawal Request: ${fmtMoney(amt)} via ${method}`,
+            date: new Date().toISOString(),
+            amount: -amt,
+            status: "pending",
+            txId: txData.id
+          };
+          await db.collection(USERS_COLLECTION).doc(currentUserData.uid).update({
+            history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+          });
+
+          showToast("Withdrawal request submitted. Awaiting admin approval.", "info");
+          document.getElementById("withdrawForm").reset();
+          document.getElementById("cashappField").style.display = "none";
+          document.getElementById("paypalField").style.display = "none";
+        } catch (error) {
+          console.error('Withdrawal error:', error);
+          showToast("Failed to submit withdrawal. Please try again.", "error");
+        }
       }
 
-      /* ---------- HISTORY ---------- */
+      // ============================================================
+      // HISTORY
+      // ============================================================
       function renderHistory() {
-        const user = currentUser();
         const list = document.getElementById("historyList");
         if (!list) return;
-        if (!user || !user.history || user.history.length === 0) {
+        if (!currentUserData || !currentUserData.history || currentUserData.history.length === 0) {
           list.innerHTML =
             `<div class="ph-empty" style="border:none; padding:50px 10px; text-align:center;">
                 <div style="font-size:3rem; margin-bottom:12px;">📜</div>
@@ -3549,42 +3682,7 @@
           return;
         }
 
-        // Check for pending transactions from global list and sync
-        const transactions = getTransactions();
-        let updated = false;
-        user.history.forEach(h => {
-          if (h.txId) {
-            const tx = transactions.find(t => t.id === h.txId);
-            if (tx && tx.status !== h.status) {
-              h.status = tx.status;
-              updated = true;
-              if (tx.status === "approved" && h.type === "deposit" && !h._processed) {
-                user.balance += h.amount;
-                h._processed = true;
-                h.label = `Deposit Approved: ${fmtMoney(h.amount)}`;
-                showToast(`Deposit of ${fmtMoney(h.amount)} approved!`, "success");
-              } else if (tx.status === "approved" && h.type === "withdraw" && !h._processed) {
-                h._processed = true;
-                h.label = `Withdrawal Approved: ${fmtMoney(Math.abs(h.amount))}`;
-                showToast(`Withdrawal of ${fmtMoney(Math.abs(h.amount))} approved!`, "success");
-              } else if (tx.status === "rejected") {
-                if (h.type === "withdraw" && !h._refunded) {
-                  user.balance += Math.abs(h.amount);
-                  h._refunded = true;
-                  showToast(`Withdrawal of ${fmtMoney(Math.abs(h.amount))} was rejected. Funds refunded.`, "error");
-                }
-                h.label = h.type === "deposit" ? `Deposit Rejected: ${fmtMoney(h.amount)}` : `Withdrawal Rejected: ${fmtMoney(Math.abs(h.amount))}`;
-              }
-            }
-          }
-        });
-        if (updated) {
-          saveCurrentUser(user);
-          document.getElementById("balanceAmount").textContent = fmtMoney(user.balance);
-          document.getElementById("fundBalancePreview").textContent = fmtMoney(user.balance);
-        }
-
-        list.innerHTML = user.history.map(h => {
+        list.innerHTML = currentUserData.history.slice().reverse().map(h => {
           let icon =
             `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`;
           if (h.type === "invest") {
@@ -3617,12 +3715,14 @@
         }).join("");
       }
 
-      /* ---------- SETTINGS ---------- */
+      // ============================================================
+      // SETTINGS
+      // ============================================================
       function renderSettings() {
-        const user = currentUser();
         const list = document.getElementById("settingsList");
         if (!list) return;
-        if (!user) { list.innerHTML = ""; return; }
+        if (!currentUserData) { list.innerHTML = ""; return; }
+        const user = currentUserData;
         const rows = [
           ["Full name", user.name],
           ["Email", user.email],
@@ -3637,32 +3737,41 @@
           `).join("");
       }
 
-      /* ---------- CALCULATOR ---------- */
-      function populateCalcDropdown() {
+      // ============================================================
+      // CALCULATOR
+      // ============================================================
+      function populateCalcDropdown(plans) {
         const sel = document.getElementById("calcPlanSelect");
-        const plans = getPlans();
         sel.innerHTML = '<option value="">Select plan</option>';
-        plans.forEach(p => {
-          const opt = document.createElement("option");
-          opt.value = p.id;
-          opt.textContent = `${p.name} — ${fmtMoney(p.amount).replace('.00', '')}`;
-          sel.appendChild(opt);
-        });
+        if (plans) {
+          plans.forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.id;
+            opt.textContent = `${p.name} — ${fmtMoney(p.amount).replace('.00', '')}`;
+            sel.appendChild(opt);
+          });
+        }
       }
 
       function updateCalculator() {
         const id = Number(document.getElementById("calcPlanSelect").value);
         const result = document.getElementById("calcResult");
         if (!id) { result.classList.add("hidden"); return; }
-        const plans = getPlans();
-        const plan = planById(id, plans);
-        document.getElementById("calcOutName").textContent = plan.name;
-        document.getElementById("calcOutAmount").textContent = fmtMoney(plan.amount);
-        document.getElementById("calcOutRate").textContent = "+" + plan.rate + "%";
-        document.getElementById("calcOutDuration").textContent = plan.durationLabel;
-        document.getElementById("calcOutProfit").textContent = fmtMoney(profit(plan));
-        document.getElementById("calcOutTotal").textContent = fmtMoney(payout(plan));
-        result.classList.remove("hidden");
+        // We need to get plans from DOM or fetch
+        db.collection(PLANS_COLLECTION).get().then(snapshot => {
+          const plans = [];
+          snapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
+          const plan = planById(id, plans);
+          if (plan) {
+            document.getElementById("calcOutName").textContent = plan.name;
+            document.getElementById("calcOutAmount").textContent = fmtMoney(plan.amount);
+            document.getElementById("calcOutRate").textContent = "+" + plan.rate + "%";
+            document.getElementById("calcOutDuration").textContent = plan.durationLabel;
+            document.getElementById("calcOutProfit").textContent = fmtMoney(profit(plan));
+            document.getElementById("calcOutTotal").textContent = fmtMoney(payout(plan));
+            result.classList.remove("hidden");
+          }
+        });
       }
 
       function openCalculator() { closeDrawer();
@@ -3670,103 +3779,157 @@
 
       function closeCalculator() { document.getElementById("calcModal").classList.remove("open"); }
 
-      /* ---------- ADMIN PANEL ---------- */
-      function renderAdminPanel() {
-        const users = getUsers();
-        const transactions = getTransactions();
-        const plans = getPlans();
-
-        document.getElementById("totalUsers").textContent = Object.keys(users).length;
-        const pendingDeposits = transactions.filter(t => t.type === "deposit" && t.status === "pending");
-        const pendingWithdrawals = transactions.filter(t => t.type === "withdraw" && t.status === "pending");
-        document.getElementById("pendingDeposits").textContent = pendingDeposits.length;
-        document.getElementById("pendingWithdrawals").textContent = pendingWithdrawals.length;
-
-        let totalInvested = 0;
-        Object.values(users).forEach(u => {
-          if (u.activePlan) totalInvested += u.activePlan.amount;
+      // ============================================================
+      // ADMIN PANEL - REAL-TIME
+      // ============================================================
+      function setupAdminListeners() {
+        // Clean up old listeners
+        unsubscribeFunctions.forEach(unsub => {
+          try { unsub(); } catch(e) {}
         });
-        document.getElementById("totalInvested").textContent = fmtMoney(totalInvested);
+        unsubscribeFunctions = [];
 
-        // Plans Table
-        const plansTable = document.getElementById("adminPlansTable");
-        plansTable.innerHTML = plans.map((p, idx) => `
-            <tr>
-              <td>${p.name}</td>
-              <td><input class="admin-edit-input" type="number" id="planAmount_${idx}" value="${p.amount}" step="100"></td>
-              <td><input class="admin-edit-input" type="number" id="planRate_${idx}" value="${p.rate}" step="1"></td>
-              <td>
-                <select class="admin-edit-input" id="planDuration_${idx}" style="max-width:120px;">
-                  <option value="7" ${p.durationDays === 7 ? 'selected' : ''}>1 week</option>
-                  <option value="14" ${p.durationDays === 14 ? 'selected' : ''}>2 weeks</option>
-                  <option value="21" ${p.durationDays === 21 ? 'selected' : ''}>3 weeks</option>
-                  <option value="30" ${p.durationDays === 30 ? 'selected' : ''}>1 month</option>
-                </select>
-              </td>
-              <td>
-                <div class="admin-actions">
-                  <button class="btn btn-primary btn-sm" onclick="updatePlan(${idx})">Save</button>
-                  <button class="btn btn-danger btn-sm" onclick="deletePlan(${idx})">Delete</button>
-                </div>
-              </td>
-            </tr>
-          `).join("");
+        // Listen for users
+        const unsubUsers = db.collection(USERS_COLLECTION).onSnapshot(() => {
+          renderAdminPanel();
+        });
+        unsubscribeFunctions.push(unsubUsers);
 
-        // Pending Deposits
-        const depList = document.getElementById("pendingDepositsList");
-        if (pendingDeposits.length === 0) {
-          depList.innerHTML = '<p style="color:var(--text-mute);">No pending deposits.</p>';
-        } else {
-          depList.innerHTML = pendingDeposits.map(t => `
-              <div class="transaction-item">
-                <div class="transaction-info">
-                  <span class="user">${t.userName} (${t.userEmail})</span>
-                  <span class="detail">${t.crypto} · ${new Date(t.createdAt).toLocaleString()}</span>
-                </div>
-                <div class="transaction-amount" style="color:var(--cyan);">${fmtMoney(t.amount)}</div>
-                <div class="admin-actions">
-                  <button class="btn btn-success btn-sm" onclick="approveTransaction(${t.id})">Approve</button>
-                  <button class="btn btn-danger btn-sm" onclick="rejectTransaction(${t.id})">Reject</button>
-                </div>
-              </div>
-            `).join("");
-        }
+        // Listen for transactions
+        const unsubTx = db.collection(TRANSACTIONS_COLLECTION).onSnapshot(() => {
+          renderAdminPanel();
+        });
+        unsubscribeFunctions.push(unsubTx);
 
-        // Pending Withdrawals
-        const withList = document.getElementById("pendingWithdrawalsList");
-        if (pendingWithdrawals.length === 0) {
-          withList.innerHTML = '<p style="color:var(--text-mute);">No pending withdrawals.</p>';
-        } else {
-          withList.innerHTML = pendingWithdrawals.map(t => `
-              <div class="transaction-item">
-                <div class="transaction-info">
-                  <span class="user">${t.userName} (${t.userEmail})</span>
-                  <span class="detail">${t.method || 'Crypto'} · ${t.address || 'N/A'} · ${new Date(t.createdAt).toLocaleString()}</span>
-                </div>
-                <div class="transaction-amount" style="color:var(--warn);">${fmtMoney(t.amount)}</div>
-                <div class="admin-actions">
-                  <button class="btn btn-success btn-sm" onclick="approveTransaction(${t.id})">Approve</button>
-                  <button class="btn btn-danger btn-sm" onclick="rejectTransaction(${t.id})">Reject</button>
-                </div>
-              </div>
-            `).join("");
-        }
-
-        // Users Table
-        const usersTable = document.getElementById("adminUsersTable");
-        usersTable.innerHTML = Object.values(users).map(u => `
-            <tr>
-              <td>${u.name}</td>
-              <td>${u.email}</td>
-              <td>${fmtMoney(u.balance)}</td>
-              <td>${u.giveaway || 'None'} ${u.giveawayValid ? '✅' : ''}</td>
-              <td>${new Date(u.createdAt).toLocaleDateString()}</td>
-            </tr>
-          `).join("");
+        // Listen for plans
+        const unsubPlans = db.collection(PLANS_COLLECTION).onSnapshot(() => {
+          renderAdminPanel();
+          loadPlans();
+        });
+        unsubscribeFunctions.push(unsubPlans);
       }
 
-      function updatePlan(idx) {
-        const plans = getPlans();
+      async function renderAdminPanel() {
+        try {
+          // Get users
+          const usersSnapshot = await db.collection(USERS_COLLECTION).get();
+          const users = [];
+          usersSnapshot.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+
+          // Get transactions
+          const txSnapshot = await db.collection(TRANSACTIONS_COLLECTION).get();
+          const transactions = [];
+          txSnapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
+
+          // Get plans
+          const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
+          const plans = [];
+          plansSnapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
+          plans.sort((a, b) => a.id - b.id);
+
+          // Stats
+          document.getElementById("totalUsers").textContent = users.length;
+          const pendingDeposits = transactions.filter(t => t.type === "deposit" && t.status === "pending");
+          const pendingWithdrawals = transactions.filter(t => t.type === "withdraw" && t.status === "pending");
+          document.getElementById("pendingDeposits").textContent = pendingDeposits.length;
+          document.getElementById("pendingWithdrawals").textContent = pendingWithdrawals.length;
+
+          let totalInvested = 0;
+          users.forEach(u => {
+            if (u.activePlan) totalInvested += u.activePlan.amount;
+          });
+          document.getElementById("totalInvested").textContent = fmtMoney(totalInvested);
+
+          // Plans Table
+          const plansTable = document.getElementById("adminPlansTable");
+          plansTable.innerHTML = plans.map((p, idx) => `
+              <tr>
+                <td>${p.name}</td>
+                <td><input class="admin-edit-input" type="number" id="planAmount_${idx}" value="${p.amount}" step="100"></td>
+                <td><input class="admin-edit-input" type="number" id="planRate_${idx}" value="${p.rate}" step="1"></td>
+                <td>
+                  <select class="admin-edit-input" id="planDuration_${idx}" style="max-width:120px;">
+                    <option value="7" ${p.durationDays === 7 ? 'selected' : ''}>1 week</option>
+                    <option value="14" ${p.durationDays === 14 ? 'selected' : ''}>2 weeks</option>
+                    <option value="21" ${p.durationDays === 21 ? 'selected' : ''}>3 weeks</option>
+                    <option value="30" ${p.durationDays === 30 ? 'selected' : ''}>1 month</option>
+                  </select>
+                </td>
+                <td>
+                  <div class="admin-actions">
+                    <button class="btn btn-primary btn-sm" onclick="updatePlan(${idx})">Save</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePlan(${idx})">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join("");
+
+          // Pending Deposits
+          const depList = document.getElementById("pendingDepositsList");
+          if (pendingDeposits.length === 0) {
+            depList.innerHTML = '<p style="color:var(--text-mute);">No pending deposits.</p>';
+          } else {
+            depList.innerHTML = pendingDeposits.map(t => `
+                <div class="transaction-item">
+                  <div class="transaction-info">
+                    <span class="user">${t.userName || 'Unknown'} (${t.userEmail || 'No email'})</span>
+                    <span class="detail">${t.crypto || 'Crypto'} · ${new Date(t.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div class="transaction-amount" style="color:var(--cyan);">${fmtMoney(t.amount)}</div>
+                  <div class="admin-actions">
+                    <button class="btn btn-success btn-sm" onclick="approveTransaction('${t.id}')">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectTransaction('${t.id}')">Reject</button>
+                  </div>
+                </div>
+              `).join("");
+          }
+
+          // Pending Withdrawals
+          const withList = document.getElementById("pendingWithdrawalsList");
+          if (pendingWithdrawals.length === 0) {
+            withList.innerHTML = '<p style="color:var(--text-mute);">No pending withdrawals.</p>';
+          } else {
+            withList.innerHTML = pendingWithdrawals.map(t => `
+                <div class="transaction-item">
+                  <div class="transaction-info">
+                    <span class="user">${t.userName || 'Unknown'} (${t.userEmail || 'No email'})</span>
+                    <span class="detail">${t.method || 'Crypto'} · ${t.address || 'N/A'} · ${new Date(t.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div class="transaction-amount" style="color:var(--warn);">${fmtMoney(t.amount)}</div>
+                  <div class="admin-actions">
+                    <button class="btn btn-success btn-sm" onclick="approveTransaction('${t.id}')">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectTransaction('${t.id}')">Reject</button>
+                  </div>
+                </div>
+              `).join("");
+          }
+
+          // Users Table
+          const usersTable = document.getElementById("adminUsersTable");
+          usersTable.innerHTML = users.map(u => `
+              <tr>
+                <td>${u.name || 'N/A'}</td>
+                <td>${u.email || 'N/A'}</td>
+                <td>${fmtMoney(u.balance || 0)}</td>
+                <td>${u.giveaway || 'None'} ${u.giveawayValid ? '✅' : ''}</td>
+                <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
+              </tr>
+            `).join("");
+
+        } catch (error) {
+          console.error('Admin render error:', error);
+        }
+      }
+
+      // ============================================================
+      // ADMIN - UPDATE PLAN
+      // ============================================================
+      async function updatePlan(idx) {
+        const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
+        const plans = [];
+        plansSnapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
+        plans.sort((a, b) => a.id - b.id);
+
         const amount = parseFloat(document.getElementById(`planAmount_${idx}`).value);
         const rate = parseFloat(document.getElementById(`planRate_${idx}`).value);
         const durationDays = parseInt(document.getElementById(`planDuration_${idx}`).value);
@@ -3783,170 +3946,249 @@
           30: "1 month"
         };
 
-        plans[idx].amount = amount;
-        plans[idx].rate = rate;
-        plans[idx].durationDays = durationDays;
-        plans[idx].durationLabel = durationMap[durationDays] || "1 month";
+        const plan = plans[idx];
+        const updatedPlan = {
+          ...plan,
+          amount: amount,
+          rate: rate,
+          durationDays: durationDays,
+          durationLabel: durationMap[durationDays] || "1 month"
+        };
 
-        savePlans(plans);
-        renderAdminPanel();
-        renderLandingPlans();
-        renderDashPlansPreview();
-        renderAllPlans();
-        populateCalcDropdown();
-        showToast("Plan updated successfully!", "success");
+        try {
+          await db.collection(PLANS_COLLECTION).doc(String(plan.id)).set(updatedPlan);
+          showToast("Plan updated successfully!", "success");
+        } catch (error) {
+          console.error('Update plan error:', error);
+          showToast("Failed to update plan.", "error");
+        }
       }
 
-      function deletePlan(idx) {
+      // ============================================================
+      // ADMIN - DELETE PLAN
+      // ============================================================
+      async function deletePlan(idx) {
         if (!confirm("Are you sure you want to permanently delete this plan?")) return;
-        const plans = getPlans();
-        plans.splice(idx, 1);
-        savePlans(plans);
-        renderAdminPanel();
-        renderLandingPlans();
-        renderDashPlansPreview();
-        renderAllPlans();
-        populateCalcDropdown();
-        showToast("Plan deleted successfully!", "success");
+        
+        const plansSnapshot = await db.collection(PLANS_COLLECTION).get();
+        const plans = [];
+        plansSnapshot.forEach(doc => plans.push({ id: parseInt(doc.id), ...doc.data() }));
+        plans.sort((a, b) => a.id - b.id);
+
+        const plan = plans[idx];
+        try {
+          await db.collection(PLANS_COLLECTION).doc(String(plan.id)).delete();
+          showToast("Plan deleted successfully!", "success");
+        } catch (error) {
+          console.error('Delete plan error:', error);
+          showToast("Failed to delete plan.", "error");
+        }
       }
 
-      function approveTransaction(id) {
-        const transactions = getTransactions();
-        const tIndex = transactions.findIndex(t => t.id === id);
-        if (tIndex === -1) return;
+      // ============================================================
+      // ADMIN - APPROVE TRANSACTION
+      // ============================================================
+      async function approveTransaction(txId) {
+        try {
+          const txDoc = await db.collection(TRANSACTIONS_COLLECTION).doc(txId).get();
+          if (!txDoc.exists) {
+            showToast("Transaction not found", "error");
+            return;
+          }
+          const txData = txDoc.data();
+          
+          // Update transaction status
+          await db.collection(TRANSACTIONS_COLLECTION).doc(txId).update({ status: "approved" });
 
-        const t = transactions[tIndex];
-        t.status = "approved";
-        saveTransactions(transactions);
-
-        const users = getUsers();
-        const user = users[t.userEmail];
-        if (user) {
-          if (t.type === "deposit") {
-            user.balance += t.amount;
-            const histEntry = user.history.find(h => h.txId === id);
-            if (histEntry) {
-              histEntry.status = "approved";
-              histEntry.label = `Deposit Approved: ${fmtMoney(t.amount)}`;
-              histEntry._processed = true;
-            } else {
-              user.history.unshift({
+          // Update user balance and history
+          const userDoc = await db.collection(USERS_COLLECTION).where('uid', '==', txData.userUid).get();
+          if (!userDoc.empty) {
+            const userRef = userDoc.docs[0].ref;
+            const userData = userDoc.docs[0].data();
+            
+            let newBalance = userData.balance || 0;
+            let historyEntry = null;
+            
+            if (txData.type === "deposit") {
+              newBalance += txData.amount;
+              historyEntry = {
                 type: "deposit",
-                label: `Deposit Approved: ${fmtMoney(t.amount)}`,
+                label: `Deposit Approved: ${fmtMoney(txData.amount)}`,
                 date: new Date().toISOString(),
-                amount: t.amount,
+                amount: txData.amount,
                 status: "approved",
-                txId: id,
+                txId: txId,
                 _processed: true
+              };
+              showToast(`Deposit of ${fmtMoney(txData.amount)} approved!`, "success");
+            } else if (txData.type === "withdraw") {
+              if (userData.balance >= txData.amount) {
+                newBalance -= txData.amount;
+                historyEntry = {
+                  type: "withdraw",
+                  label: `Withdrawal Approved: ${fmtMoney(txData.amount)}`,
+                  date: new Date().toISOString(),
+                  amount: -txData.amount,
+                  status: "approved",
+                  txId: txId,
+                  _processed: true
+                };
+                showToast(`Withdrawal of ${fmtMoney(txData.amount)} approved!`, "success");
+              } else {
+                showToast("Insufficient balance for this user", "error");
+                await db.collection(TRANSACTIONS_COLLECTION).doc(txId).update({ status: "rejected" });
+                return;
+              }
+            }
+            
+            if (historyEntry) {
+              await userRef.update({
+                balance: newBalance,
+                history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
               });
             }
-            showToast(`Deposit of ${fmtMoney(t.amount)} approved for ${t.userName}`, "success");
-          } else if (t.type === "withdraw") {
-            if (user.balance >= t.amount) {
-              user.balance -= t.amount;
-              const histEntry = user.history.find(h => h.txId === id);
-              if (histEntry) {
-                histEntry.status = "approved";
-                histEntry.label = `Withdrawal Approved: ${fmtMoney(t.amount)}`;
-                histEntry._processed = true;
-              } else {
-                user.history.unshift({
-                  type: "withdraw",
-                  label: `Withdrawal Approved: ${fmtMoney(t.amount)}`,
-                  date: new Date().toISOString(),
-                  amount: -t.amount,
-                  status: "approved",
-                  txId: id,
-                  _processed: true
-                });
-              }
-              showToast(`Withdrawal of ${fmtMoney(t.amount)} approved for ${t.userName}`, "success");
-            } else {
-              showToast(`Insufficient balance for ${t.userName}`, "error");
-              t.status = "rejected";
-              saveTransactions(transactions);
-              renderAdminPanel();
-              return;
-            }
           }
-          saveUsers(users);
+          
+          renderAdminPanel();
+        } catch (error) {
+          console.error('Approve transaction error:', error);
+          showToast("Failed to approve transaction.", "error");
         }
-        renderAdminPanel();
-        const session = getSession();
-        if (session && session !== "admin" && session === t.userEmail) {
-          renderDashboard();
-        }
-        updateAboutStats();
       }
 
-      function rejectTransaction(id) {
-        const transactions = getTransactions();
-        const tIndex = transactions.findIndex(t => t.id === id);
-        if (tIndex === -1) return;
+      // ============================================================
+      // ADMIN - REJECT TRANSACTION
+      // ============================================================
+      async function rejectTransaction(txId) {
+        try {
+          const txDoc = await db.collection(TRANSACTIONS_COLLECTION).doc(txId).get();
+          if (!txDoc.exists) {
+            showToast("Transaction not found", "error");
+            return;
+          }
+          const txData = txDoc.data();
+          
+          await db.collection(TRANSACTIONS_COLLECTION).doc(txId).update({ status: "rejected" });
 
-        const t = transactions[tIndex];
-        t.status = "rejected";
-        saveTransactions(transactions);
+          // Update user history
+          const userDoc = await db.collection(USERS_COLLECTION).where('uid', '==', txData.userUid).get();
+          if (!userDoc.empty) {
+            const userRef = userDoc.docs[0].ref;
+            const userData = userDoc.docs[0].data();
+            
+            let historyEntry = null;
+            if (txData.type === "deposit") {
+              historyEntry = {
+                type: "deposit",
+                label: `Deposit Rejected: ${fmtMoney(txData.amount)}`,
+                date: new Date().toISOString(),
+                amount: txData.amount,
+                status: "rejected",
+                txId: txId
+              };
+            } else if (txData.type === "withdraw") {
+              historyEntry = {
+                type: "withdraw",
+                label: `Withdrawal Rejected: ${fmtMoney(txData.amount)}`,
+                date: new Date().toISOString(),
+                amount: -txData.amount,
+                status: "rejected",
+                txId: txId,
+                _refunded: true
+              };
+              // Refund the amount
+              await userRef.update({
+                balance: (userData.balance || 0) + txData.amount
+              });
+            }
+            
+            if (historyEntry) {
+              await userRef.update({
+                history: firebase.firestore.FieldValue.arrayUnion(historyEntry)
+              });
+            }
+          }
+          
+          showToast(`Transaction rejected`, "error");
+          renderAdminPanel();
+        } catch (error) {
+          console.error('Reject transaction error:', error);
+          showToast("Failed to reject transaction.", "error");
+        }
+      }
 
-        const users = getUsers();
-        const user = users[t.userEmail];
+      // ============================================================
+      // AUTH STATE LISTENER
+      // ============================================================
+      auth.onAuthStateChanged(async (user) => {
         if (user) {
-          const histEntry = user.history.find(h => h.txId === id);
-          if (histEntry) {
-            histEntry.status = "rejected";
-            if (t.type === "deposit") {
-              histEntry.label = `Deposit Rejected: ${fmtMoney(t.amount)}`;
+          const email = user.email;
+          if (email === ADMIN_EMAIL) {
+            isAdmin = true;
+            navTo("admin");
+            setupAdminListeners();
+            renderAdminPanel();
+          } else {
+            isAdmin = false;
+            // Check if user exists in Firestore
+            const userDoc = await db.collection(USERS_COLLECTION).doc(user.uid).get();
+            if (userDoc.exists) {
+              await enterDashboard(user.uid);
             } else {
-              histEntry.label = `Withdrawal Rejected: ${fmtMoney(t.amount)}`;
-              user.balance += t.amount;
-              histEntry._refunded = true;
+              // User might have been deleted from Firestore
+              await auth.signOut();
+              navTo("landing");
+              showToast("Account not found. Please sign up again.", "error");
             }
           }
-          saveUsers(users);
-          showToast(`Transaction rejected for ${t.userName}`, "error");
+        } else {
+          // User is signed out
+          if (!document.getElementById('page-landing').classList.contains('hidden')) {
+            // Already on landing page
+          } else {
+            navTo("landing");
+          }
         }
-        renderAdminPanel();
-        const session = getSession();
-        if (session && session !== "admin" && session === t.userEmail) {
-          renderDashboard();
-        }
-        updateAboutStats();
-      }
+      });
 
-      /* ---------- INIT ---------- */
-      window.addEventListener("DOMContentLoaded", () => {
+      // ============================================================
+      // INIT
+      // ============================================================
+      window.addEventListener("DOMContentLoaded", async () => {
         populateStates();
-        populateCalcDropdown();
-        renderLandingPlans();
         renderTestimonials();
         renderBgPlaceholders();
         renderTicker();
         observeReveals();
-        
-        // Setup cross-tab synchronization
-        setupCrossTabSync();
-        
-        // Start live counters
         startLiveCounters();
 
-        const savedPlans = getPlans();
-        if (savedPlans && savedPlans.length) {
-          PLANS = savedPlans;
-        }
+        // Seed plans if empty
+        await seedPlansIfEmpty();
+        await loadPlans();
 
-        const session = getSession();
-        if (session === "admin") {
-          navTo("admin");
-          renderAdminPanel();
-        } else if (session && currentUser()) {
-          enterDashboard();
+        // Check if user is already logged in
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const email = currentUser.email;
+          if (email === ADMIN_EMAIL) {
+            isAdmin = true;
+            navTo("admin");
+            setupAdminListeners();
+            renderAdminPanel();
+          } else {
+            const userDoc = await db.collection(USERS_COLLECTION).doc(currentUser.uid).get();
+            if (userDoc.exists) {
+              await enterDashboard(currentUser.uid);
+            }
+          }
         } else {
           navTo("landing");
         }
-        updateAboutStats();
       });
 
-      // Expose functions globally for onclick handlers
+      // ============================================================
+      // GLOBAL EXPOSURE
+      // ============================================================
       window.planCardHTML = planCardHTML;
       window.planById = planById;
       window.payout = payout;
@@ -3979,10 +4221,12 @@
       window.handleLogin = handleLogin;
       window.handleSignup = handleSignup;
       window.handleLogout = handleLogout;
-      window.handleAdminLogout = handleAdminLogout;
       window.navTo = navTo;
       window.updatePwMeter = updatePwMeter;
       window.updateAboutStats = updateAboutStats;
+      window.loadPlans = loadPlans;
+      window.populateCalcDropdown = populateCalcDropdown;
+      window.updateCalculator = updateCalculator;
     </script>
   </body>
 </html>
