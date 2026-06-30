@@ -768,11 +768,11 @@
         position: relative;
         border-radius: var(--radius-lg);
         overflow: hidden;
-        min-height: 340px;
+        min-height: 380px;
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
-        padding: 26px 22px;
+        padding: 30px 26px;
         border: 1px solid var(--panel-border);
         background-size: cover;
         background-position: center;
@@ -784,14 +784,20 @@
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: linear-gradient(180deg, rgba(10, 15, 28, 0.2) 0%, rgba(10, 15, 28, 0.95) 90%), radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.2), transparent 60%);
+        background: linear-gradient(180deg, rgba(10, 15, 28, 0.1) 0%, rgba(10, 15, 28, 0.92) 70%, rgba(10, 15, 28, 0.98) 100%);
+      }
+      .testi-card .testi-content {
+        position: relative;
+        z-index: 1;
       }
       .testi-quote {
         position: relative;
         z-index: 1;
-        color: var(--text);
+        color: var(--text-hi);
         font-size: .95rem;
-        line-height: 1.55;
+        line-height: 1.6;
+        font-weight: 400;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
       .testi-who {
         position: relative;
@@ -799,11 +805,11 @@
         margin-top: 16px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       }
       .testi-avatar {
-        width: 42px;
-        height: 42px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         overflow: hidden;
         border: 2px solid var(--cyan);
@@ -818,21 +824,24 @@
       .testi-name {
         font-weight: 600;
         color: var(--text-hi);
-        font-size: .88rem;
+        font-size: .95rem;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
       .testi-role {
-        font-size: .74rem;
+        font-size: .78rem;
         color: var(--cyan);
         font-family: var(--font-mono);
         font-weight: 500;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
       .testi-stars {
         position: relative;
         z-index: 1;
-        color: var(--cyan);
-        font-size: .78rem;
-        letter-spacing: 2px;
-        margin-bottom: 4px;
+        color: #FFD700;
+        font-size: .85rem;
+        letter-spacing: 3px;
+        margin-bottom: 6px;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
       .about-wrap {
         display: grid;
@@ -849,12 +858,59 @@
         background-size: cover;
         background-position: center;
         isolation: isolate;
+        background-image: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(139, 92, 246, 0.2) 100%);
       }
       .about-media::after {
         content: '';
         position: absolute;
         inset: 0;
         background: linear-gradient(160deg, rgba(10, 15, 28, 0.2), rgba(10, 15, 28, 0.8));
+      }
+      .about-media-content {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        padding: 30px;
+        text-align: center;
+      }
+      .about-media-content .live-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 20px var(--success);
+        animation: pulse 1.6s ease-in-out infinite;
+        margin-bottom: 12px;
+      }
+      .about-media-content .live-text {
+        font-family: var(--font-mono);
+        font-size: .9rem;
+        color: var(--cyan);
+        letter-spacing: .1em;
+        font-weight: 600;
+      }
+      .about-media-content .live-stats {
+        display: flex;
+        gap: 30px;
+        margin-top: 20px;
+      }
+      .about-media-content .live-stats span {
+        font-family: var(--font-display);
+        color: var(--text-hi);
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      .about-media-content .live-stats small {
+        display: block;
+        font-size: .7rem;
+        color: var(--text-mute);
+        font-family: var(--font-mono);
+        font-weight: 400;
       }
       .about-media-tag {
         position: absolute;
@@ -1047,6 +1103,9 @@
         }
         .section {
           padding: 80px 0;
+        }
+        .about-media {
+          min-height: 280px;
         }
       }
       .screen {
@@ -2102,6 +2161,15 @@
         <div class="container">
           <div class="about-wrap reveal">
             <div class="about-media" id="aboutMedia">
+              <div class="about-media-content">
+                <span class="live-dot"></span>
+                <span class="live-text">● LIVE PERFORMANCE FEED</span>
+                <div class="live-stats">
+                  <span>$0.00 <small>Portfolio Value</small></span>
+                  <span>0 <small>Active Users</small></span>
+                  <span>0 <small>Total Invested</small></span>
+                </div>
+              </div>
               <span class="about-media-tag">● Real-time performance feed</span>
             </div>
             <div>
@@ -2665,25 +2733,28 @@
         "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(34, 211, 238, 0.08) 100%)",
       ];
 
-      // Updated testimonials with images
+      // Updated testimonials with images - full card background images
       const TESTIMONIALS = [
         { 
           name: "Marcus Olin", 
           role: "Plan: Platinum Premium", 
           quote: "Space X offers unmatched predictability. Watching my active Gold plans hit maturity exactly when promised is exceptional.", 
-          image: "https://i.imgur.com/DyuCEQu.jpeg"
+          image: "https://i.imgur.com/DyuCEQu.jpeg",
+          bg: "https://i.imgur.com/DyuCEQu.jpeg"
         },
         { 
           name: "Sarah Chen", 
           role: "Plan: Diamond VIP", 
           quote: "The dashboard terms and math are perfect. No complexity — absolute structure with clean high-yield parameters. I've seen consistent 100% returns.", 
-          image: "https://i.imgur.com/51WkU3W.jpeg"
+          image: "https://i.imgur.com/51WkU3W.jpeg",
+          bg: "https://i.imgur.com/51WkU3W.jpeg"
         },
         { 
           name: "Devon Cole", 
           role: "Plan: Gold Elite", 
           quote: "Instant deposit flow and crisp UI. Space X is my preferred system for fixed capital growth allocations. The crypto integration is seamless.", 
-          image: "https://i.imgur.com/OmjRb0O.jpeg"
+          image: "https://i.imgur.com/OmjRb0O.jpeg",
+          bg: "https://i.imgur.com/OmjRb0O.jpeg"
         },
       ];
 
@@ -2851,24 +2922,26 @@
       function renderTestimonials() {
         const track = document.getElementById("testiTrack");
         track.innerHTML = TESTIMONIALS.map((t, i) => `
-            <div class="testi-card" style="background:${BG_PLACEHOLDERS[i % BG_PLACEHOLDERS.length]}; border:1px solid var(--panel-border);">
-              <div class="testi-stars">★★★★★</div>
-              <p class="testi-quote">"${t.quote}"</p>
-              <div class="testi-who">
-                <div class="testi-avatar">
-                  <img src="${t.image}" alt="${t.name}" loading="lazy">
+            <div class="testi-card" style="background-image: url('${t.bg}'); border:1px solid var(--panel-border);">
+              <div class="testi-content">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-quote">"${t.quote}"</p>
+                <div class="testi-who">
+                  <div class="testi-avatar">
+                    <img src="${t.image}" alt="${t.name}" loading="lazy">
+                  </div>
+                  <span>
+                    <span class="testi-name" style="display:block;">${t.name}</span>
+                    <span class="testi-role">${t.role}</span>
+                  </span>
                 </div>
-                <span>
-                  <span class="testi-name" style="display:block;">${t.name}</span>
-                  <span class="testi-role">${t.role}</span>
-                </span>
               </div>
             </div>
           `).join("");
       }
 
       function renderBgPlaceholders() {
-        document.getElementById("aboutMedia").style.background = BG_PLACEHOLDERS[2];
+        document.getElementById("aboutMedia").style.background = "linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(139, 92, 246, 0.2) 100%)";
         document.getElementById("contactWrap").style.background = "linear-gradient(135deg, var(--void) 0%, var(--void-2) 100%)";
       }
 
@@ -3078,6 +3151,31 @@
         renderActivePlan();
         renderHistory();
         renderSettings();
+        // Update about media stats
+        updateAboutStats();
+      }
+
+      /* ---------- UPDATE ABOUT STATS ---------- */
+      function updateAboutStats() {
+        const users = getUsers();
+        const totalUsers = Object.keys(users).length;
+        let totalInvested = 0;
+        Object.values(users).forEach(u => {
+          if (u.activePlan) totalInvested += u.activePlan.amount;
+        });
+        const aboutContent = document.querySelector('.about-media-content');
+        if (aboutContent) {
+          const stats = aboutContent.querySelectorAll('.live-stats span');
+          if (stats.length >= 3) {
+            // Keep portfolio value dynamic from current user if logged in
+            const user = currentUser();
+            if (user) {
+              stats[0].innerHTML = `${fmtMoney(user.balance)} <small>Portfolio Value</small>`;
+            }
+            stats[1].innerHTML = `${totalUsers} <small>Active Users</small>`;
+            stats[2].innerHTML = `${fmtMoney(totalInvested)} <small>Total Invested</small>`;
+          }
+        }
       }
 
       /* ---------- ACTIVE PLAN ---------- */
@@ -3661,6 +3759,8 @@
         if (session && session !== "admin" && session === t.userEmail) {
           renderDashboard();
         }
+        // Update about stats
+        updateAboutStats();
       }
 
       function rejectTransaction(id) {
@@ -3694,6 +3794,7 @@
         if (session && session !== "admin" && session === t.userEmail) {
           renderDashboard();
         }
+        updateAboutStats();
       }
 
       /* ---------- INIT ---------- */
@@ -3720,6 +3821,7 @@
         } else {
           navTo("landing");
         }
+        updateAboutStats();
       });
 
       // Expose functions globally for onclick handlers
@@ -3758,6 +3860,7 @@
       window.handleAdminLogout = handleAdminLogout;
       window.navTo = navTo;
       window.updatePwMeter = updatePwMeter;
+      window.updateAboutStats = updateAboutStats;
     </script>
   </body>
 </html>
