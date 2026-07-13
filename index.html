@@ -2,15 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-        <title>Space X — Premium Structured Investing</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-            <!-- Firebase SDKs -->
-            <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-            <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-            <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-            <style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Space X — Premium Structured Investing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
       :root {
         --void: #0A0F1C;
         --void-2: #121A2E;
@@ -759,6 +759,13 @@
       }
       .plan-card .btn {
         margin-top: auto;
+      }
+      .plan-card .plan-image {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        border-radius: var(--radius-sm);
+        margin-top: -8px;
       }
       .testimonials-section {
         position: relative;
@@ -2128,806 +2135,704 @@
         to { transform: translateY(0) scale(1); opacity: 1; }
       }
     </style>
-          </head>
-          <body>
-            <canvas id="starfield">
-            </canvas>
-            <div id="toast-stack">
-            </div>
-            <!-- DRAWER -->
-            <div class="scrim" id="scrim" onclick="closeDrawer()">
-            </div>
-            <aside class="drawer" id="drawer">
-              <div class="drawer-head">
-                <div class="brand">
-                  <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img">
-                    <span class="brand-text">Space X</span>
+  </head>
+  <body>
+    <canvas id="starfield"></canvas>
+    <div id="toast-stack"></div>
+
+    <!-- DRAWER -->
+    <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+    <aside class="drawer" id="drawer">
+      <div class="drawer-head">
+        <div class="brand">
+          <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img">
+          <span class="brand-text">Space X</span>
+        </div>
+        <button class="icon-btn" onclick="closeDrawer()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <a class="drawer-link" onclick="scrollToId('about')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        About Us
+      </a>
+      <a class="drawer-link" onclick="scrollToId('contact')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 4h16v16H4z" opacity="0"/>
+          <path d="M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5"/>
+        </svg>
+        Contact
+      </a>
+      <a class="drawer-link" onclick="openCalculator()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <path d="M8 6h8M8 10h2M12 10h2M16 10h0M8 14h2M12 14h2M16 14h0M8 18h2M12 18h2"/>
+        </svg>
+        Profit Calculator
+      </a>
+      <div class="drawer-sep"></div>
+      <a class="drawer-link" onclick="openAuth('login')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+        </svg>
+        Log in
+      </a>
+      <a class="drawer-link" onclick="openAuth('signup')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM20 8v6M23 11h-6"/>
+        </svg>
+        Create account
+      </a>
+    </aside>
+
+    <!-- LANDING -->
+    <div id="page-landing">
+      <nav class="nav" id="landingNav">
+        <div class="nav-left">
+          <button class="menu-btn" onclick="openDrawer()" aria-label="Menu">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <div class="brand">
+            <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img">
+          </div>
+        </div>
+        <div class="nav-right">
+          <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
+          <button class="btn btn-primary btn-sm" onclick="openAuth('signup')">Get started</button>
+        </div>
+      </nav>
+
+      <section class="hero">
+        <div class="hero-rings">
+          <div class="ring ring1"></div>
+          <div class="ring ring2"></div>
+          <div class="ring ring3"></div>
+        </div>
+        <div class="hero-glow"></div>
+        <span class="eyebrow">High-Performance Portfolio Allocation</span>
+        <h1>Structured yield models engineered for <em>unrivaled</em> velocity</h1>
+        <p class="lead">Space X turns systematic asset allocation into a secure, high-yield pipeline — clear milestones, instant balance updates, and professional dashboards designed for your trajectory.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" onclick="openAuth('signup')">Initialize Portfolio</button>
+          <button class="btn btn-outline" onclick="scrollToId('plans-preview')">View Tier Plans</button>
+        </div>
+      </section>
+
+      <div class="ticker-wrap">
+        <div class="ticker" id="tickerEl"></div>
+      </div>
+
+      <section class="section" id="plans-preview">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Fast-Growing Investors' Choice</span>
+            <h2>Three foundational paths, optimized for instant momentum</h2>
+            <p>Explore our most active tier models — selected daily by key corporate investors tracking premium structural growth.</p>
+          </div>
+          <div class="plans-grid reveal" id="landingPlansGrid"></div>
+          <div style="text-align:center; margin-top:34px;">
+            <button class="btn btn-outline" onclick="openAuth('signup')">Explore All Tiers</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section testimonials-section" id="testimonials">
+        <div class="container">
+          <div class="section-head center">
+            <span class="eyebrow">Client Validation</span>
+            <h2>Trusted by global investors tracking premium returns</h2>
+          </div>
+          <div class="testi-track reveal" id="testiTrack"></div>
+        </div>
+      </section>
+
+      <section class="section" id="about">
+        <div class="container">
+          <div class="about-wrap reveal">
+            <div class="about-media" id="aboutMedia">
+              <div class="about-media-content">
+                <span class="live-dot"></span>
+                <span class="live-text">● LIVE PERFORMANCE FEED</span>
+                <div class="live-stats">
+                  <div class="stat-item">
+                    <span class="num" id="livePortfolioValue">$2,000,000</span>
+                    <small>Portfolio Value</small>
                   </div>
-                  <button class="icon-btn" onclick="closeDrawer()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                  </button>
-                </div>
-                <a class="drawer-link" onclick="scrollToId('about')">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 16v-4M12 8h.01"/>
-                  </svg>
-                  About Us
-                </a>
-                <a class="drawer-link" onclick="scrollToId('contact')">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M4 4h16v16H4z" opacity="0"/>
-                    <path d="M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5"/>
-                  </svg>
-                  Contact
-                </a>
-                <a class="drawer-link" onclick="openCalculator()">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <rect x="4" y="2" width="16" height="20" rx="2"/>
-                    <path d="M8 6h8M8 10h2M12 10h2M16 10h0M8 14h2M12 14h2M16 14h0M8 18h2M12 18h2"/>
-                  </svg>
-                  Profit Calculator
-                </a>
-                <div class="drawer-sep">
-                </div>
-                <a class="drawer-link" onclick="openAuth('login')">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
-                  </svg>
-                  Log in
-                </a>
-                <a class="drawer-link" onclick="openAuth('signup')">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM20 8v6M23 11h-6"/>
-                  </svg>
-                  Create account
-                </a>
-              </aside>
-              <!-- LANDING -->
-              <div id="page-landing">
-                <nav class="nav" id="landingNav">
-                  <div class="nav-left">
-                    <button class="menu-btn" onclick="openDrawer()" aria-label="Menu">
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 6h16M4 12h16M4 18h16"/>
-                      </svg>
-                    </button>
-                    <div class="brand">
-                      <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img">
-                      </div>
-                    </div>
-                    <div class="nav-right">
-                      <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Log in</button>
-                      <button class="btn btn-primary btn-sm" onclick="openAuth('signup')">Get started</button>
-                    </div>
-                  </nav>
-                  <section class="hero">
-                    <div class="hero-rings">
-                      <div class="ring ring1">
-                      </div>
-                      <div class="ring ring2">
-                      </div>
-                      <div class="ring ring3">
-                      </div>
-                    </div>
-                    <div class="hero-glow">
-                    </div>
-                    <span class="eyebrow">High-Performance Portfolio Allocation</span>
-                    <h1>Structured yield models engineered for <em>unrivaled</em> velocity</h1>
-                    <p class="lead">Space X turns systematic asset allocation into a secure, high-yield pipeline — clear milestones, instant balance updates, and professional dashboards designed for your trajectory.</p>
-                    <div class="hero-actions">
-                      <button class="btn btn-primary" onclick="openAuth('signup')">Initialize Portfolio</button>
-                      <button class="btn btn-outline" onclick="scrollToId('plans-preview')">View Tier Plans</button>
-                    </div>
-                  </section>
-                  <div class="ticker-wrap">
-                    <div class="ticker" id="tickerEl">
-                    </div>
+                  <div class="stat-item">
+                    <span class="num live-counter" id="liveUserCount">579,739</span>
+                    <small>Active Users</small>
                   </div>
-                  <section class="section" id="plans-preview">
-                    <div class="container">
-                      <div class="section-head">
-                        <span class="eyebrow">Fast-Growing Investors' Choice</span>
-                        <h2>Three foundational paths, optimized for instant momentum</h2>
-                        <p>Explore our most active tier models — selected daily by key corporate investors tracking premium structural growth.</p>
-                      </div>
-                      <div class="plans-grid reveal" id="landingPlansGrid">
-                      </div>
-                      <div style="text-align:center; margin-top:34px;">
-                        <button class="btn btn-outline" onclick="openAuth('signup')">Explore All Tiers</button>
-                      </div>
-                    </div>
-                  </section>
-                  <section class="section testimonials-section" id="testimonials">
-                    <div class="container">
-                      <div class="section-head center">
-                        <span class="eyebrow">Client Validation</span>
-                        <h2>Trusted by global investors tracking premium returns</h2>
-                      </div>
-                      <div class="testi-track reveal" id="testiTrack">
-                      </div>
-                    </div>
-                  </section>
-                  <section class="section" id="about">
-                    <div class="container">
-                      <div class="about-wrap reveal">
-                        <div class="about-media" id="aboutMedia">
-                          <div class="about-media-content">
-                            <span class="live-dot">
-                            </span>
-                            <span class="live-text">● LIVE PERFORMANCE FEED</span>
-                            <div class="live-stats">
-                              <div class="stat-item">
-                                <span class="num" id="livePortfolioValue">$2,000,000</span>
-                                <small>Portfolio Value</small>
-                              </div>
-                              <div class="stat-item">
-                                <span class="num live-counter" id="liveUserCount">579,739</span>
-                                <small>Active Users</small>
-                              </div>
-                              <div class="stat-item">
-                                <span class="num" id="liveInvestedAmount">$800,000</span>
-                                <small>Total Invested</small>
-                              </div>
-                            </div>
-                          </div>
-                          <span class="about-media-tag">● Real-time performance feed</span>
-                        </div>
-                        <div>
-                          <span class="eyebrow">About Space X</span>
-                          <h2 style="margin-top:14px; font-size:clamp(1.8rem,3vw,2.4rem);">Complete mathematical predictability</h2>
-                          <p style="color:var(--text-mute); margin-top:16px;">Space X structured investing provides guaranteed, predetermined return parameters for precise long-range planning. Our portfolio structures are simple: fixed-term, high-yield options that eliminate market ambiguity so you always understand where your assets stand.</p>
-                          <div class="about-stats">
-                            <div class="stat-box">
-                              <div class="num">10</div>
-                              <div class="label">Proprietary tier paths</div>
-                            </div>
-                            <div class="stat-box">
-                              <div class="num">100%</div>
-                              <div class="label">Fixed-rate terms</div>
-                            </div>
-                            <div class="stat-box">
-                              <div class="num">24/7</div>
-                              <div class="label">On-demand balance access</div>
-                            </div>
-                            <div class="stat-box">
-                              <div class="num">0</div>
-                              <div class="label">Hidden transaction fees</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                  <section class="section" id="contact">
-                    <div class="container">
-                      <div class="contact-wrap" id="contactWrap">
-                        <div class="contact-grid">
-                          <div class="contact-info">
-                            <span class="eyebrow">Advisory Access</span>
-                            <h3 style="margin-top:14px;">Speak with an analyst</h3>
-                            <p>Our help center and portfolio managers respond directly to all client requests within 24 hours.</p>
-                            <div class="contact-list">
-                              <div class="contact-list-item">
-                                <span class="ico">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path d="M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5"/>
-                                  </svg>
-                                </span>
-                                help@spacex.invest
-                              </div>
-                              <div class="contact-list-item">
-                                <span class="ico">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                                  </svg>
-                                </span>
-                                +1 (800) 555-0100
-                              </div>
-                              <div class="contact-list-item">
-                                <span class="ico">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                </span>
-                                SpaceX Plaza, Penthouse Floor
-                              </div>
-                            </div>
-                          </div>
-                          <form onsubmit="event.preventDefault(); showToast('Message submitted to support','success');">
-                            <div class="form-field">
-                              <label>Full name</label>
-                              <input type="text" placeholder="Jane Voss" required>
-                              </div>
-                              <div class="form-field">
-                                <label>Email</label>
-                                <input type="email" placeholder="you@example.com" required>
-                                </div>
-                                <div class="form-field">
-                                  <label>Message</label>
-                                  <textarea placeholder="How can we support your goals?" required>
-                                  </textarea>
-                                </div>
-                                <button class="btn btn-primary btn-block" type="submit">Send Message</button>
-                              </form>
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-                      <footer>
-                        <div class="container">
-                          <div class="footer-top">
-                            <div>
-                              <div class="brand">
-                                <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img" style="height:28px;">
-                                  <span class="brand-text">Space X</span>
-                                </div>
-                                <p style="color:var(--text-mute); font-size:.86rem; margin-top:12px; max-width:260px;">Premium structured investing, engineered for absolute clarity.</p>
-                              </div>
-                              <div class="footer-cols">
-                                <div class="footer-col">
-                                  <h4>Platform</h4>
-                                  <a onclick="scrollToId('plans-preview')">Plans</a>
-                                  <a onclick="scrollToId('about')">About Us</a>
-                                  <a onclick="scrollToId('contact')">Contact</a>
-                                  <a onclick="openCalculator()">Calculator</a>
-                                </div>
-                                <div class="footer-col">
-                                  <h4>Account</h4>
-                                  <a onclick="openAuth('login')">Log in</a>
-                                  <a onclick="openAuth('signup')">Create account</a>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="footer-bottom">
-                              <span>© 2026 Space X Investing. All rights reserved.</span>
-                              <span>Demo preview build — for illustration purposes only.</span>
-                            </div>
-                          </div>
-                        </footer>
-                      </div>
-                      <!-- LOGIN -->
-                      <div id="page-login" class="screen hidden">
-                        <div class="auth-screen">
-                          <button class="icon-btn auth-back" onclick="navTo('landing')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M19 12H5M12 19l-7-7 7-7"/>
-                            </svg>
-                          </button>
-                          <div class="auth-card">
-                            <div class="auth-head">
-                              <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img-sm">
-                                <h2>Welcome back</h2>
-                                <p>Log in to access your dashboard.</p>
-                              </div>
-                              <form id="loginForm" onsubmit="handleLogin(event)">
-                                <div class="form-field">
-                                  <label>Email</label>
-                                  <input type="email" id="loginEmail" placeholder="you@example.com" required>
-                                  </div>
-                                  <div class="form-field">
-                                    <label>Password</label>
-                                    <div class="input-wrap">
-                                      <input type="password" id="loginPassword" placeholder="••••••••" required>
-                                        <button type="button" class="toggle-eye" onclick="toggleEye('loginPassword', this)">
-                                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                                            <circle cx="12" cy="12" r="3"/>
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <button class="btn btn-primary btn-block" type="submit" id="loginBtn" style="margin-top:8px;">Log in</button>
-                                  </form>
-                                  <div class="auth-foot">No account yet? <button onclick="openAuth('signup')">Create one</button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <!-- SIGNUP -->
-                          <div id="page-signup" class="screen hidden">
-                            <div class="auth-screen">
-                              <button class="icon-btn auth-back" onclick="navTo('landing')">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                                </svg>
-                              </button>
-                              <div class="auth-card">
-                                <div class="auth-head">
-                                  <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img-sm">
-                                    <h2>Create Investor Account</h2>
-                                    <p>Start your yield journey with Space X.</p>
-                                  </div>
-                                  <form id="signupForm" onsubmit="handleSignup(event)">
-                                    <div class="form-field">
-                                      <label>Full name</label>
-                                      <input type="text" id="suName" placeholder="Jane Voss" required>
-                                      </div>
-                                      <div class="form-field">
-                                        <label>Email</label>
-                                        <input type="email" id="suEmail" placeholder="you@example.com" required>
-                                        </div>
-                                        <div class="form-field">
-                                          <label>Phone number</label>
-                                          <input type="tel" id="suPhone" placeholder="(555) 012-3456" required>
-                                          </div>
-                                          <div class="form-field">
-                                            <label>State</label>
-                                            <select id="suState" required>
-                                              <option value="" disabled selected>Select your state</option>
-                                            </select>
-                                          </div>
-                                          <div class="form-field">
-                                            <label>Signup Bonus ID</label>
-                                            <input type="text" id="suGiveaway" placeholder="Enter bonus code">
-                                            </div>
-                                            <div class="form-field">
-                                              <label>Password</label>
-                                              <div class="input-wrap">
-                                                <input type="password" id="suPassword" placeholder="Create a password" required oninput="updatePwMeter()">
-                                                  <button type="button" class="toggle-eye" onclick="toggleEye('suPassword', this)">
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                                                      <circle cx="12" cy="12" r="3"/>
-                                                    </svg>
-                                                  </button>
-                                                </div>
-                                                <div class="pw-meter">
-                                                  <div class="pw-meter-track" id="pwTrack">
-                                                    <i>
-                                                    </i>
-                                                    <i>
-                                                    </i>
-                                                    <i>
-                                                    </i>
-                                                    <i>
-                                                    </i>
-                                                  </div>
-                                                  <div class="pw-meter-label">
-                                                    <span id="pwLabel">Password strength</span>
-                                                    <span id="pwHint">min. 8 characters</span>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                              <button class="btn btn-primary btn-block" type="submit" id="signupBtn" style="margin-top:8px;">Sign up</button>
-                                            </form>
-                                            <div class="auth-foot">Already have an account? <button onclick="openAuth('login')">Log in</button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <!-- RESTRICTION MODAL -->
-                                    <div id="restrictionModal" class="restriction-modal">
-                                      <div class="modal-box">
-                                        <div class="icon">⭐</div>
-                                        <h3>Bonus Account Restriction</h3>
-                                        <p>
-                                          With your <strong>Signup Bonus</strong> account, you can only invest in the
-                                          <strong style="color:var(--cyan);">Diamond VIP</strong> plan at
-                                          <span class="highlight">$10,000</span>.
-                                        </p>
-                                        <p style="font-size:0.85rem; color:var(--text-faint); margin-top:-10px;">
-                                          This ensures maximum returns on your bonus funds.
-                                        </p>
-                                        <button class="btn btn-primary" onclick="closeRestrictionModal()">Got it</button>
-                                      </div>
-                                    </div>
-                                    <!-- ADMIN PANEL -->
-                                    <div id="page-admin" class="screen hidden">
-                                      <nav class="dash-nav">
-                                        <div class="brand">
-                                          <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img" style="height:28px;">
-                                            <span class="brand-text">Admin Panel</span>
-                                          </div>
-                                          <div class="dash-nav-right">
-                                            <button class="icon-btn" title="Log out" onclick="handleLogout()">
-                                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
-                                              </svg>
-                                            </button>
-                                          </div>
-                                        </nav>
-                                        <div class="admin-panel">
-                                          <div class="container">
-                                            <div class="dash-hello">
-                                              <span class="eyebrow">Administration</span>
-                                              <h2>Control Panel</h2>
-                                            </div>
-                                            <!-- Stats -->
-                                            <div class="admin-stats" id="adminStats">
-                                              <div class="admin-stat-card">
-                                                <div class="num" id="totalUsers">0</div>
-                                                <div class="label">Total Users</div>
-                                              </div>
-                                              <div class="admin-stat-card">
-                                                <div class="num" id="pendingDeposits">0</div>
-                                                <div class="label">Pending Deposits</div>
-                                              </div>
-                                              <div class="admin-stat-card">
-                                                <div class="num" id="pendingWithdrawals">0</div>
-                                                <div class="label">Pending Withdrawals</div>
-                                              </div>
-                                              <div class="admin-stat-card">
-                                                <div class="num" id="totalInvested">$0</div>
-                                                <div class="label">Total Invested</div>
-                                              </div>
-                                            </div>
-                                            <!-- Manage Plans -->
-                                            <div class="admin-section">
-                                              <h3>📊 Manage Investment Plans</h3>
-                                              <div class="admin-table">
-                                                <table>
-                                                  <thead>
-                                                    <tr>
-                                                      <th>Plan Name</th>
-                                                      <th>Amount ($)</th>
-                                                      <th>Rate (%)</th>
-                                                      <th>Duration</th>
-                                                      <th>Actions</th>
-                                                    </tr>
-                                                  </thead>
-                                                  <tbody id="adminPlansTable">
-                                                  </tbody>
-                                                </table>
-                                              </div>
-                                            </div>
-                                            <!-- Pending Deposits -->
-                                            <div class="admin-section">
-                                              <h3>💰 Pending Deposits</h3>
-                                              <div id="pendingDepositsList">
-                                                <p style="color:var(--text-mute);">Loading pending deposits...</p>
-                                              </div>
-                                            </div>
-                                            <!-- Pending Withdrawals -->
-                                            <div class="admin-section">
-                                              <h3>🏦 Pending Withdrawals</h3>
-                                              <div id="pendingWithdrawalsList">
-                                                <p style="color:var(--text-mute);">Loading pending withdrawals...</p>
-                                              </div>
-                                            </div>
-                                            <!-- Users List -->
-                                            <div class="admin-section">
-                                              <h3>👥 All Users</h3>
-                                              <div class="admin-table">
-                                                <table>
-                                                  <thead>
-                                                    <tr>
-                                                      <th>Name</th>
-                                                      <th>Email</th>
-                                                      <th>Balance</th>
-                                                      <th>Bonus ID</th>
-                                                      <th>Joined</th>
-                                                    </tr>
-                                                  </thead>
-                                                  <tbody id="adminUsersTable">
-                                                    <tr>
-                                                      <td colspan="5" style="text-align:center;color:var(--text-mute);">Loading users...</td>
-                                                    </tr>
-                                                  </tbody>
-                                                </table>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <!-- DASHBOARD -->
-                                      <div id="page-dashboard" class="screen hidden">
-                                        <nav class="dash-nav">
-                                          <div class="brand">
-                                            <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img" style="height:28px;">
-                                              <span class="brand-text">Space X</span>
-                                            </div>
-                                            <div class="dash-nav-links">
-                                              <a class="dash-nav-link active" data-dlink="home" onclick="dashGo('home')">Dashboard</a>
-                                              <a class="dash-nav-link" data-dlink="plans" onclick="dashGo('plans')">Tier Plans</a>
-                                              <a class="dash-nav-link" data-dlink="fund" onclick="dashGo('fund')">Deposit/Withdraw</a>
-                                              <a class="dash-nav-link" data-dlink="history" onclick="dashGo('history')">History</a>
-                                              <a class="dash-nav-link" data-dlink="settings" onclick="dashGo('settings')">Settings</a>
-                                            </div>
-                                            <div class="dash-nav-right">
-                                              <button class="icon-btn" title="Profit calculator" onclick="openCalculator()">
-                                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                                  <rect x="4" y="2" width="16" height="20" rx="2"/>
-                                                  <path d="M8 6h8M8 10h2M12 10h2M16 10h0M8 14h2M12 14h2M16 14h0"/>
-                                                </svg>
-                                              </button>
-                                              <button class="icon-btn" title="Log out" onclick="handleLogout()">
-                                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
-                                                </svg>
-                                              </button>
-                                            </div>
-                                          </nav>
-                                          <div class="dash-body" id="dashHome">
-                                            <div class="container">
-                                              <div class="dash-hello reveal in">
-                                                <span class="eyebrow">Client Dashboard</span>
-                                                <h2 id="dashHelloName">Welcome back</h2>
-                                              </div>
-                                              <div class="balance-card reveal in" style="margin-bottom:20px;">
-                                                <div class="balance-top">
-                                                  <span class="balance-label">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                      <circle cx="12" cy="12" r="10"/>
-                                                      <path d="M12 6v6l4 2"/>
-                                                    </svg>
-                                                    Portfolio Value
-                                                  </span>
-                                                  <span class="demo-pill">Live</span>
-                                                </div>
-                                                <div class="balance-amount" id="balanceAmount">$0.00</div>
-                                                <div class="balance-sub">
-                                                  <span class="dot" style="width:5px;height:5px;border-radius:50%;background:var(--success);display:inline-block;">
-                                                  </span>
-                                                  Active allocation funds
-                                                </div>
-                                                <div class="balance-actions">
-                                                  <button class="balance-action deposit" onclick="openDepositWithdraw('deposit')">
-                                                    <span class="ico">
-                                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M12 19V5M5 12l7-7 7 7"/>
-                                                      </svg>
-                                                    </span>
-                                                    <span class="txt">
-                                                      <b>Deposit</b>
-                                                      <span>Add funds</span>
-                                                    </span>
-                                                  </button>
-                                                  <button class="balance-action withdraw" onclick="openDepositWithdraw('withdraw')">
-                                                    <span class="ico">
-                                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                                                      </svg>
-                                                    </span>
-                                                    <span class="txt">
-                                                      <b>Withdraw</b>
-                                                      <span>Cash out</span>
-                                                    </span>
-                                                  </button>
-                                                </div>
-                                                <div class="crypto-note">
-                                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex:none;">
-                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                                  </svg>
-                                                  Only crypto settlements for security.
-                                                </div>
-                                              </div>
-                                              <div id="activePlanSlot">
-                                              </div>
-                                              <div class="dash-section-head" style="margin-top:40px;">
-                                                <h3>Investment Plans (Standard Tiers)</h3>
-                                                <button class="btn btn-ghost btn-sm" onclick="dashGo('plans')">View all tiers →</button>
-                                              </div>
-                                              <div class="plans-grid" id="dashPlansPreview">
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div class="ph-page hidden" id="dashPlans">
-                                            <div class="container">
-                                              <div class="dash-hello">
-                                                <span class="eyebrow">All tier options</span>
-                                                <h2>10 structured investment plans</h2>
-                                              </div>
-                                              <div class="plans-grid full" id="allPlansGrid" style="margin-top:28px;">
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div class="ph-page hidden" id="dashFund">
-                                            <div class="container" style="max-width:680px;">
-                                              <a class="ph-back" onclick="dashGo('home')">
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                                                </svg>
-                                                Back to dashboard
-                                              </a>
-                                              <div class="ph-balance-mini">
-                                                <div class="label">Current Balance Preview</div>
-                                                <div class="amt" id="fundBalancePreview" style="color:var(--cyan);font-family:var(--font-display);">$0.00</div>
-                                              </div>
-                                              <div class="ph-toggle">
-                                                <button id="fundTabDeposit" onclick="setFundTab('deposit')" class="active">
-                                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                    <path d="M12 19V5M5 12l7-7 7 7"/>
-                                                  </svg>
-                                                  Deposit Gateway
-                                                </button>
-                                                <button id="fundTabWithdraw" onclick="setFundTab('withdraw')">
-                                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                                  </svg>
-                                                  Withdrawal System
-                                                </button>
-                                              </div>
-                                              <p style="text-align:center; color:var(--cyan); font-size:0.86rem; margin-bottom:28px; font-weight:600;">🛡️ We only allow deposit and settlement with cryptocurrency to avoid transaction security issues.</p>
-                                              <div id="depositFormStep1" class="interactive-panel">
-                                                <h4 style="margin-bottom:14px; font-size:1.15rem; color:var(--text-hi);">Initiate Safe Crypto Deposit</h4>
-                                                <form id="step1Form" onsubmit="goDepositStep2(event)">
-                                                  <div class="form-field">
-                                                    <label>Amount to Deposit ($ USD value)</label>
-                                                    <input type="number" id="depositAmountStep1" placeholder="e.g. 5000" min="10" required>
-                                                    </div>
-                                                    <div class="form-field">
-                                                      <label>Payment Method</label>
-                                                      <select id="depositCryptoStep1" required>
-                                                        <option value="Bitcoin">Bitcoin (BTC)</option>
-                                                        <option value="Ethereum">Ethereum (ETH)</option>
-                                                      </select>
-                                                    </div>
-                                                    <button class="btn btn-primary btn-block" type="submit">Proceed to Address</button>
-                                                  </form>
-                                                </div>
-                                                <div id="depositFormStep2" class="interactive-panel hidden">
-                                                  <h4 style="margin-bottom:12px; font-size:1.15rem; color:var(--text-hi);">Complete Transfer</h4>
-                                                  <p style="color:var(--text-mute); font-size:0.88rem; margin-bottom:18px;">Please deposit the exact amount requested below to the address specified to avoid automated crediting delay.</p>
-                                                  <div style="background:var(--void-2); border:1px solid var(--panel-border); border-radius:12px; padding:18px; margin-bottom:20px;">
-                                                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.88rem;">
-                                                      <span style="color:var(--text-mute); font-weight:500;">Target Currency:</span>
-                                                      <b id="targetMethodLabel" style="color:var(--cyan);">Bitcoin</b>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.88rem;">
-                                                      <span style="color:var(--text-mute); font-weight:500;">Required Amount:</span>
-                                                      <b id="targetAmountLabel" style="color:var(--text-hi); font-family:var(--font-mono);">$0.00 USD</b>
-                                                    </div>
-                                                  </div>
-                                                  <div class="wallet-box">
-                                                    <label style="font-size:0.72rem; color:var(--text-mute); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Destination Address</label>
-                                                    <div class="wallet-address-container">
-                                                      <span id="depositWalletAddress" class="address-input-disabled" style="font-size:0.75rem;">—</span>
-                                                      <button class="btn btn-outline btn-sm" onclick="copyWalletAddress()" style="padding:10px 14px; border-radius:8px;">Copy</button>
-                                                    </div>
-                                                  </div>
-                                                  <div style="display:flex; gap:12px; margin-top:24px;">
-                                                    <button class="btn btn-outline" type="button" onclick="backToStep1()" style="flex:1;">Change details</button>
-                                                    <button class="btn btn-primary" type="button" onclick="confirmPaymentAndLoad()" style="flex:1.5;">I have paid</button>
-                                                  </div>
-                                                </div>
-                                                <div id="depositFormStep3" class="interactive-panel hidden">
-                                                  <div class="deposit-timer-box">
-                                                    <div class="deposit-timer-ring">
-                                                    </div>
-                                                    <h4 style="font-size:1.1rem; color:var(--text-hi); font-weight:700;">Confirming payment...</h4>
-                                                    <p style="color:var(--text-mute); font-size:0.82rem; text-align:center; max-width:320px; line-height:1.5;">We are listening to the blockchain ledger for transaction blocks. This will take up to 10 seconds. Please do not close this window.</p>
-                                                  </div>
-                                                </div>
-                                                <div id="withdrawConsole" class="interactive-panel hidden">
-                                                  <h4 style="margin-bottom:14px; font-size:1.15rem; color:var(--text-hi);">Submit Withdrawal Request</h4>
-                                                  <p style="color:var(--text-mute); font-size:0.88rem; margin-bottom:20px;">Minimum withdrawal amount is $15,000. Withdraw available yield directly to your preferred payment method.</p>
-                                                  <form id="withdrawForm" onsubmit="executeWithdraw(event)">
-                                                    <div class="form-field">
-                                                      <label>Payment Method</label>
-                                                      <select id="withdrawMethod" required onchange="toggleWithdrawFields()">
-                                                        <option value="">Select method</option>
-                                                        <option value="cashapp">Cash App</option>
-                                                        <option value="paypal">PayPal</option>
-                                                      </select>
-                                                    </div>
-                                                    <div class="form-field" id="cashappField" style="display:none;">
-                                                      <label>Cash App $Cashtag</label>
-                                                      <input type="text" id="cashappTag" placeholder="$yourcashtag">
-                                                      </div>
-                                                      <div class="form-field" id="paypalField" style="display:none;">
-                                                        <label>PayPal Email</label>
-                                                        <input type="email" id="paypalEmail" placeholder="you@example.com">
-                                                        </div>
-                                                        <div class="form-field">
-                                                          <label>Amount to Withdraw ($ USD value)</label>
-                                                          <input type="number" id="withdrawAmount" placeholder="e.g. 15000" min="15000" required>
-                                                            <small style="color:var(--text-mute); font-size:.7rem; display:block; margin-top:4px;" id="withdrawMinLabel">Minimum withdrawal: $15,000</small>
-                                                          </div>
-                                                          <button class="btn btn-primary btn-block" type="submit" id="withdrawBtn">Request Withdrawal</button>
-                                                        </form>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                  <div class="ph-page hidden" id="dashHistory">
-                                                    <div class="container" style="max-width:740px;">
-                                                      <div class="dash-hello">
-                                                        <span class="eyebrow">Transaction History</span>
-                                                        <h2>Activity Log</h2>
-                                                      </div>
-                                                      <div id="historyList" style="margin-top:24px; border-radius:var(--radius-lg); border:1px solid var(--panel-border); background:var(--panel); padding:8px 22px; box-shadow:0 4px 15px rgba(0,0,0,0.02);">
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                  <div class="ph-page hidden" id="dashSettings">
-                                                    <div class="container" style="max-width:560px;">
-                                                      <div class="dash-hello">
-                                                        <span class="eyebrow">Account</span>
-                                                        <h2>Settings</h2>
-                                                      </div>
-                                                      <div class="settings-list" id="settingsList">
-                                                      </div>
-                                                      <button class="btn btn-outline btn-block" style="margin-top:24px;" onclick="handleLogout()">Log out</button>
-                                                    </div>
-                                                  </div>
-                                                  <nav class="bottom-nav">
-                                                    <a class="bn-item active" data-bn="home" onclick="dashGo('home')">
-                                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M3 11l9-8 9 8M5 10v10h14V10"/>
-                                                      </svg>
-                                                      Home
-                                                    </a>
-                                                    <a class="bn-item" data-bn="plans" onclick="dashGo('plans')">
-                                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/>
-                                                      </svg>
-                                                      Plans
-                                                    </a>
-                                                    <a class="bn-plus" onclick="openDepositWithdraw('deposit')">
-                                                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F1C" stroke-width="2.8">
-                                                        <path d="M12 5v14M5 12h14"/>
-                                                      </svg>
-                                                    </a>
-                                                    <a class="bn-item" data-bn="history" onclick="dashGo('history')">
-                                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M3 3v5h5M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
-                                                        <path d="M12 7v5l4 2"/>
-                                                      </svg>
-                                                      History
-                                                    </a>
-                                                    <a class="bn-item" data-bn="settings" onclick="dashGo('settings')">
-                                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <circle cx="12" cy="12" r="3"/>
-                                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                                                      </svg>
-                                                      Profile
-                                                    </a>
-                                                  </nav>
-                                                </div>
-                                                <!-- CALCULATOR MODAL -->
-                                                <div class="modal-scrim" id="calcModal" onclick="if(event.target===this) closeCalculator()">
-                                                  <div class="modal-card">
-                                                    <div class="modal-head">
-                                                      <h3>Profit calculator</h3>
-                                                      <button class="icon-btn" onclick="closeCalculator()">
-                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                          <path d="M18 6L6 18M6 6l12 12"/>
-                                                        </svg>
-                                                      </button>
-                                                    </div>
-                                                    <div class="form-field">
-                                                      <label>Select plan</label>
-                                                      <select id="calcPlanSelect" onchange="updateCalculator()">
-                                                        <option value="">Select plan</option>
-                                                      </select>
-                                                    </div>
-                                                    <div class="calc-result hidden" id="calcResult">
-                                                      <div class="calc-result-row">
-                                                        <span>Plan</span>
-                                                        <b id="calcOutName">—</b>
-                                                      </div>
-                                                      <div class="calc-result-row">
-                                                        <span>Principal</span>
-                                                        <b id="calcOutAmount">—</b>
-                                                      </div>
-                                                      <div class="calc-result-row">
-                                                        <span>Return rate percentage</span>
-                                                        <b id="calcOutRate">—</b>
-                                                      </div>
-                                                      <div class="calc-result-row">
-                                                        <span>Duration</span>
-                                                        <b id="calcOutDuration">—</b>
-                                                      </div>
-                                                      <div class="calc-result-row">
-                                                        <span>Net Yield Profit</span>
-                                                        <b id="calcOutProfit">—</b>
-                                                      </div>
-                                                      <div class="calc-result-row big">
-                                                        <span>Total payout</span>
-                                                        <b id="calcOutTotal">—</b>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                                <!-- LOAD OVERLAY -->
-                                                <div class="load-overlay hidden" id="loadOverlay">
-                                                  <div class="load-rocket">🚀</div>
-                                                  <p id="loadOverlayText">Creating account…</p>
-                                                </div>
-                                                <script>
+                  <div class="stat-item">
+                    <span class="num" id="liveInvestedAmount">$800,000</span>
+                    <small>Total Invested</small>
+                  </div>
+                </div>
+              </div>
+              <span class="about-media-tag">● Real-time performance feed</span>
+            </div>
+            <div>
+              <span class="eyebrow">About Space X</span>
+              <h2 style="margin-top:14px; font-size:clamp(1.8rem,3vw,2.4rem);">Complete mathematical predictability</h2>
+              <p style="color:var(--text-mute); margin-top:16px;">Space X structured investing provides guaranteed, predetermined return parameters for precise long-range planning. Our portfolio structures are simple: fixed-term, high-yield options that eliminate market ambiguity so you always understand where your assets stand.</p>
+              <div class="about-stats">
+                <div class="stat-box"><div class="num">9</div><div class="label">Proprietary tier paths</div></div>
+                <div class="stat-box"><div class="num">100%</div><div class="label">Fixed-rate terms</div></div>
+                <div class="stat-box"><div class="num">24/7</div><div class="label">On-demand balance access</div></div>
+                <div class="stat-box"><div class="num">0</div><div class="label">Hidden transaction fees</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="contact">
+        <div class="container">
+          <div class="contact-wrap" id="contactWrap">
+            <div class="contact-grid">
+              <div class="contact-info">
+                <span class="eyebrow">Advisory Access</span>
+                <h3 style="margin-top:14px;">Speak with an analyst</h3>
+                <p>Our help center and portfolio managers respond directly to all client requests within 24 hours.</p>
+                <div class="contact-list">
+                  <div class="contact-list-item">
+                    <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5"/></svg></span>
+                    help@spacex.invest
+                  </div>
+                  <div class="contact-list-item">
+                    <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+                    +1 (800) 555-0100
+                  </div>
+                  <div class="contact-list-item">
+                    <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                    SpaceX Plaza, Penthouse Floor
+                  </div>
+                </div>
+              </div>
+              <form onsubmit="event.preventDefault(); showToast('Message submitted to support','success');">
+                <div class="form-field"><label>Full name</label><input type="text" placeholder="Jane Voss" required></div>
+                <div class="form-field"><label>Email</label><input type="email" placeholder="you@example.com" required></div>
+                <div class="form-field"><label>Message</label><textarea placeholder="How can we support your goals?" required></textarea></div>
+                <button class="btn btn-primary btn-block" type="submit">Send Message</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="container">
+          <div class="footer-top">
+            <div>
+              <div class="brand">
+                <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img" style="height:28px;">
+                <span class="brand-text">Space X</span>
+              </div>
+              <p style="color:var(--text-mute); font-size:.86rem; margin-top:12px; max-width:260px;">Premium structured investing, engineered for absolute clarity.</p>
+            </div>
+            <div class="footer-cols">
+              <div class="footer-col">
+                <h4>Platform</h4>
+                <a onclick="scrollToId('plans-preview')">Plans</a>
+                <a onclick="scrollToId('about')">About Us</a>
+                <a onclick="scrollToId('contact')">Contact</a>
+                <a onclick="openCalculator()">Calculator</a>
+              </div>
+              <div class="footer-col">
+                <h4>Account</h4>
+                <a onclick="openAuth('login')">Log in</a>
+                <a onclick="openAuth('signup')">Create account</a>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <span>© 2026 Space X Investing. All rights reserved.</span>
+            <span>Demo preview build — for illustration purposes only.</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="page-login" class="screen hidden">
+      <div class="auth-screen">
+        <button class="icon-btn auth-back" onclick="navTo('landing')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div class="auth-card">
+          <div class="auth-head">
+            <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img-sm">
+            <h2>Welcome back</h2>
+            <p>Log in to access your dashboard.</p>
+          </div>
+          <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com" required></div>
+            <div class="form-field">
+              <label>Password</label>
+              <div class="input-wrap">
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
+                <button type="button" class="toggle-eye" onclick="toggleEye('loginPassword', this)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" id="loginBtn" style="margin-top:8px;">Log in</button>
+          </form>
+          <div class="auth-foot">No account yet? <button onclick="openAuth('signup')">Create one</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="page-signup" class="screen hidden">
+      <div class="auth-screen">
+        <button class="icon-btn auth-back" onclick="navTo('landing')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div class="auth-card">
+          <div class="auth-head">
+            <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img-sm">
+            <h2>Create Investor Account</h2>
+            <p>Start your yield journey with Space X.</p>
+          </div>
+          <form id="signupForm" onsubmit="handleSignup(event)">
+            <div class="form-field"><label>Full name</label><input type="text" id="suName" placeholder="Jane Voss" required></div>
+            <div class="form-field"><label>Email</label><input type="email" id="suEmail" placeholder="you@example.com" required></div>
+            <div class="form-field"><label>Phone number</label><input type="tel" id="suPhone" placeholder="(555) 012-3456" required></div>
+            <div class="form-field">
+              <label>State</label>
+              <select id="suState" required>
+                <option value="" disabled selected>Select your state</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Signup Bonus ID</label>
+              <input type="text" id="suGiveaway" placeholder="Enter bonus code">
+            </div>
+            <div class="form-field">
+              <label>Password</label>
+              <div class="input-wrap">
+                <input type="password" id="suPassword" placeholder="Create a password" required oninput="updatePwMeter()">
+                <button type="button" class="toggle-eye" onclick="toggleEye('suPassword', this)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="pw-meter">
+                <div class="pw-meter-track" id="pwTrack"><i></i><i></i><i></i><i></i></div>
+                <div class="pw-meter-label"><span id="pwLabel">Password strength</span><span id="pwHint">min. 8 characters</span></div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" id="signupBtn" style="margin-top:8px;">Sign up</button>
+          </form>
+          <div class="auth-foot">Already have an account? <button onclick="openAuth('login')">Log in</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESTRICTION MODAL -->
+    <div id="restrictionModal" class="restriction-modal">
+      <div class="modal-box">
+        <div class="icon">⚡</div>
+        <h3>Bonus Account Restriction</h3>
+        <p>
+          With your <strong>Signup Bonus</strong> account, you can only invest in the 
+          <strong style="color:var(--cyan);">Cybertruck Cyberbeast</strong> plan at 
+          <span class="highlight">$10,000</span>.
+        </p>
+        <p style="font-size:0.85rem; color:var(--text-faint); margin-top:-10px;">
+          This ensures maximum returns on your bonus funds.
+        </p>
+        <button class="btn btn-primary" onclick="closeRestrictionModal()">Got it</button>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="page-admin" class="screen hidden">
+      <nav class="dash-nav">
+        <div class="brand">
+          <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img" style="height:28px;">
+          <span class="brand-text">Admin Panel</span>
+        </div>
+        <div class="dash-nav-right">
+          <button class="icon-btn" title="Log out" onclick="handleLogout()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <div class="admin-panel">
+        <div class="container">
+          <div class="dash-hello">
+            <span class="eyebrow">Administration</span>
+            <h2>Control Panel</h2>
+          </div>
+
+          <!-- Stats -->
+          <div class="admin-stats" id="adminStats">
+            <div class="admin-stat-card">
+              <div class="num" id="totalUsers">0</div>
+              <div class="label">Total Users</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="num" id="pendingDeposits">0</div>
+              <div class="label">Pending Deposits</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="num" id="pendingWithdrawals">0</div>
+              <div class="label">Pending Withdrawals</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="num" id="totalInvested">$0</div>
+              <div class="label">Total Invested</div>
+            </div>
+          </div>
+
+          <!-- Manage Plans -->
+          <div class="admin-section">
+            <h3>📊 Manage Investment Plans</h3>
+            <div class="admin-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Plan Name</th>
+                    <th>Amount ($)</th>
+                    <th>Rate (%)</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminPlansTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pending Deposits -->
+          <div class="admin-section">
+            <h3>💰 Pending Deposits</h3>
+            <div id="pendingDepositsList">
+              <p style="color:var(--text-mute);">Loading pending deposits...</p>
+            </div>
+          </div>
+
+          <!-- Pending Withdrawals -->
+          <div class="admin-section">
+            <h3>🏦 Pending Withdrawals</h3>
+            <div id="pendingWithdrawalsList">
+              <p style="color:var(--text-mute);">Loading pending withdrawals...</p>
+            </div>
+          </div>
+
+          <!-- Users List -->
+          <div class="admin-section">
+            <h3>👥 All Users</h3>
+            <div class="admin-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Balance</th>
+                    <th>Bonus ID</th>
+                    <th>Joined</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTable">
+                  <tr><td colspan="5" style="text-align:center;color:var(--text-mute);">Loading users...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="screen hidden">
+      <nav class="dash-nav">
+        <div class="brand">
+          <img src="https://i.imgur.com/PYgg4y5.jpeg" alt="Space X Logo" class="logo-img" style="height:28px;">
+          <span class="brand-text">Space X</span>
+        </div>
+        <div class="dash-nav-links">
+          <a class="dash-nav-link active" data-dlink="home" onclick="dashGo('home')">Dashboard</a>
+          <a class="dash-nav-link" data-dlink="plans" onclick="dashGo('plans')">Tier Plans</a>
+          <a class="dash-nav-link" data-dlink="fund" onclick="dashGo('fund')">Deposit/Withdraw</a>
+          <a class="dash-nav-link" data-dlink="history" onclick="dashGo('history')">History</a>
+          <a class="dash-nav-link" data-dlink="settings" onclick="dashGo('settings')">Settings</a>
+        </div>
+        <div class="dash-nav-right">
+          <button class="icon-btn" title="Profit calculator" onclick="openCalculator()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="4" y="2" width="16" height="20" rx="2"/>
+              <path d="M8 6h8M8 10h2M12 10h2M16 10h0M8 14h2M12 14h2M16 14h0"/>
+            </svg>
+          </button>
+          <button class="icon-btn" title="Log out" onclick="handleLogout()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <div class="dash-body" id="dashHome">
+        <div class="container">
+          <div class="dash-hello reveal in">
+            <span class="eyebrow">Client Dashboard</span>
+            <h2 id="dashHelloName">Welcome back</h2>
+          </div>
+          <div class="balance-card reveal in" style="margin-bottom:20px;">
+            <div class="balance-top">
+              <span class="balance-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+                Portfolio Value
+              </span>
+              <span class="demo-pill">Live</span>
+            </div>
+            <div class="balance-amount" id="balanceAmount">$0.00</div>
+            <div class="balance-sub">
+              <span class="dot" style="width:5px;height:5px;border-radius:50%;background:var(--success);display:inline-block;"></span>
+              Active allocation funds
+            </div>
+            <div class="balance-actions">
+              <button class="balance-action deposit" onclick="openDepositWithdraw('deposit')">
+                <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+                <span class="txt"><b>Deposit</b><span>Add funds</span></span>
+              </button>
+              <button class="balance-action withdraw" onclick="openDepositWithdraw('withdraw')">
+                <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+                <span class="txt"><b>Withdraw</b><span>Cash out</span></span>
+              </button>
+            </div>
+            <div class="crypto-note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex:none;">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              Only crypto settlements for security.
+            </div>
+          </div>
+
+          <div id="activePlanSlot"></div>
+
+          <div class="dash-section-head" style="margin-top:40px;">
+            <h3>Investment Plans (Tesla Performance Tiers)</h3>
+            <button class="btn btn-ghost btn-sm" onclick="dashGo('plans')">View all tiers →</button>
+          </div>
+          <div class="plans-grid" id="dashPlansPreview"></div>
+        </div>
+      </div>
+
+      <div class="ph-page hidden" id="dashPlans">
+        <div class="container">
+          <div class="dash-hello">
+            <span class="eyebrow">All tier options</span>
+            <h2>9 Tesla Performance Investment Plans</h2>
+          </div>
+          <div class="plans-grid full" id="allPlansGrid" style="margin-top:28px;"></div>
+        </div>
+      </div>
+
+      <div class="ph-page hidden" id="dashFund">
+        <div class="container" style="max-width:680px;">
+          <a class="ph-back" onclick="dashGo('home')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to dashboard
+          </a>
+          <div class="ph-balance-mini">
+            <div class="label">Current Balance Preview</div>
+            <div class="amt" id="fundBalancePreview" style="color:var(--cyan);font-family:var(--font-display);">$0.00</div>
+          </div>
+          <div class="ph-toggle">
+            <button id="fundTabDeposit" onclick="setFundTab('deposit')" class="active">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              Deposit Gateway
+            </button>
+            <button id="fundTabWithdraw" onclick="setFundTab('withdraw')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              Withdrawal System
+            </button>
+          </div>
+          <p style="text-align:center; color:var(--cyan); font-size:0.86rem; margin-bottom:28px; font-weight:600;">🛡️ We only allow deposit and settlement with cryptocurrency to avoid transaction security issues.</p>
+
+          <div id="depositFormStep1" class="interactive-panel">
+            <h4 style="margin-bottom:14px; font-size:1.15rem; color:var(--text-hi);">Initiate Safe Crypto Deposit</h4>
+            <form id="step1Form" onsubmit="goDepositStep2(event)">
+              <div class="form-field"><label>Amount to Deposit ($ USD value)</label><input type="number" id="depositAmountStep1" placeholder="e.g. 5000" min="10" required></div>
+              <div class="form-field"><label>Payment Method</label>
+                <select id="depositCryptoStep1" required>
+                  <option value="Bitcoin">Bitcoin (BTC)</option>
+                  <option value="Ethereum">Ethereum (ETH)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit">Proceed to Address</button>
+            </form>
+          </div>
+
+          <div id="depositFormStep2" class="interactive-panel hidden">
+            <h4 style="margin-bottom:12px; font-size:1.15rem; color:var(--text-hi);">Complete Transfer</h4>
+            <p style="color:var(--text-mute); font-size:0.88rem; margin-bottom:18px;">Please deposit the exact amount requested below to the address specified to avoid automated crediting delay.</p>
+            <div style="background:var(--void-2); border:1px solid var(--panel-border); border-radius:12px; padding:18px; margin-bottom:20px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.88rem;">
+                <span style="color:var(--text-mute); font-weight:500;">Target Currency:</span>
+                <b id="targetMethodLabel" style="color:var(--cyan);">Bitcoin</b>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.88rem;">
+                <span style="color:var(--text-mute); font-weight:500;">Required Amount:</span>
+                <b id="targetAmountLabel" style="color:var(--text-hi); font-family:var(--font-mono);">$0.00 USD</b>
+              </div>
+            </div>
+            <div class="wallet-box">
+              <label style="font-size:0.72rem; color:var(--text-mute); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Destination Address</label>
+              <div class="wallet-address-container">
+                <span id="depositWalletAddress" class="address-input-disabled" style="font-size:0.75rem;">—</span>
+                <button class="btn btn-outline btn-sm" onclick="copyWalletAddress()" style="padding:10px 14px; border-radius:8px;">Copy</button>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:24px;">
+              <button class="btn btn-outline" type="button" onclick="backToStep1()" style="flex:1;">Change details</button>
+              <button class="btn btn-primary" type="button" onclick="confirmPaymentAndLoad()" style="flex:1.5;">I have paid</button>
+            </div>
+          </div>
+
+          <div id="depositFormStep3" class="interactive-panel hidden">
+            <div class="deposit-timer-box">
+              <div class="deposit-timer-ring"></div>
+              <h4 style="font-size:1.1rem; color:var(--text-hi); font-weight:700;">Confirming payment...</h4>
+              <p style="color:var(--text-mute); font-size:0.82rem; text-align:center; max-width:320px; line-height:1.5;">We are listening to the blockchain ledger for transaction blocks. This will take up to 10 seconds. Please do not close this window.</p>
+            </div>
+          </div>
+
+          <div id="withdrawConsole" class="interactive-panel hidden">
+            <h4 style="margin-bottom:14px; font-size:1.15rem; color:var(--text-hi);">Submit Withdrawal Request</h4>
+            <p style="color:var(--text-mute); font-size:0.88rem; margin-bottom:20px;">Minimum withdrawal amount is $15,000. Withdraw available yield directly to your preferred payment method.</p>
+            <form id="withdrawForm" onsubmit="executeWithdraw(event)">
+              <div class="form-field">
+                <label>Payment Method</label>
+                <select id="withdrawMethod" required onchange="toggleWithdrawFields()">
+                  <option value="">Select method</option>
+                  <option value="cashapp">Cash App</option>
+                  <option value="paypal">PayPal</option>
+                </select>
+              </div>
+              <div class="form-field" id="cashappField" style="display:none;">
+                <label>Cash App $Cashtag</label>
+                <input type="text" id="cashappTag" placeholder="$yourcashtag">
+              </div>
+              <div class="form-field" id="paypalField" style="display:none;">
+                <label>PayPal Email</label>
+                <input type="email" id="paypalEmail" placeholder="you@example.com">
+              </div>
+              <div class="form-field">
+                <label>Amount to Withdraw ($ USD value)</label>
+                <input type="number" id="withdrawAmount" placeholder="e.g. 15000" min="15000" required>
+                <small style="color:var(--text-mute); font-size:.7rem; display:block; margin-top:4px;" id="withdrawMinLabel">Minimum withdrawal: $15,000</small>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit" id="withdrawBtn">Request Withdrawal</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="ph-page hidden" id="dashHistory">
+        <div class="container" style="max-width:740px;">
+          <div class="dash-hello">
+            <span class="eyebrow">Transaction History</span>
+            <h2>Activity Log</h2>
+          </div>
+          <div id="historyList" style="margin-top:24px; border-radius:var(--radius-lg); border:1px solid var(--panel-border); background:var(--panel); padding:8px 22px; box-shadow:0 4px 15px rgba(0,0,0,0.02);"></div>
+        </div>
+      </div>
+
+      <div class="ph-page hidden" id="dashSettings">
+        <div class="container" style="max-width:560px;">
+          <div class="dash-hello">
+            <span class="eyebrow">Account</span>
+            <h2>Settings</h2>
+          </div>
+          <div class="settings-list" id="settingsList"></div>
+          <button class="btn btn-outline btn-block" style="margin-top:24px;" onclick="handleLogout()">Log out</button>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <a class="bn-item active" data-bn="home" onclick="dashGo('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>
+          Home
+        </a>
+        <a class="bn-item" data-bn="plans" onclick="dashGo('plans')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/></svg>
+          Plans
+        </a>
+        <a class="bn-plus" onclick="openDepositWithdraw('deposit')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F1C" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
+        </a>
+        <a class="bn-item" data-bn="history" onclick="dashGo('history')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+          History
+        </a>
+        <a class="bn-item" data-bn="settings" onclick="dashGo('settings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Profile
+        </a>
+      </nav>
+    </div>
+
+    <!-- CALCULATOR MODAL -->
+    <div class="modal-scrim" id="calcModal" onclick="if(event.target===this) closeCalculator()">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3>Profit calculator</h3>
+          <button class="icon-btn" onclick="closeCalculator()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="form-field">
+          <label>Select plan</label>
+          <select id="calcPlanSelect" onchange="updateCalculator()">
+            <option value="">Select plan</option>
+          </select>
+        </div>
+        <div class="calc-result hidden" id="calcResult">
+          <div class="calc-result-row"><span>Plan</span><b id="calcOutName">—</b></div>
+          <div class="calc-result-row"><span>Principal</span><b id="calcOutAmount">—</b></div>
+          <div class="calc-result-row"><span>Return rate percentage</span><b id="calcOutRate">—</b></div>
+          <div class="calc-result-row"><span>Duration</span><b id="calcOutDuration">—</b></div>
+          <div class="calc-result-row"><span>Net Yield Profit</span><b id="calcOutProfit">—</b></div>
+          <div class="calc-result-row big"><span>Total payout</span><b id="calcOutTotal">—</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOAD OVERLAY -->
+    <div class="load-overlay hidden" id="loadOverlay">
+      <div class="load-rocket">🚀</div>
+      <p id="loadOverlayText">Creating account…</p>
+    </div>
+
+    <script>
       // ============================================================
       // FIREBASE CONFIG & INITIALIZATION
       // ============================================================
@@ -2973,20 +2878,20 @@
       const ADMIN_EMAIL = "admin@gmail.com";
 
       // ============================================================
-      // DEFAULT PLANS
+      // TESLA-THEMED PLANS (9 Plans)
       // ============================================================
       const DEFAULT_PLANS = [
-        { id: 1, name: "Diamond VIP", amount: 10000, durationLabel: "1 week", durationDays: 7, rate: 100, featured: true },
-        { id: 2, name: "Platinum Premium", amount: 8000, durationLabel: "2 weeks", durationDays: 14, rate: 100, featured: true },
-        { id: 3, name: "Gold Elite", amount: 6000, durationLabel: "3 weeks", durationDays: 21, rate: 90, featured: true },
-        { id: 4, name: "Gold Shield", amount: 5500, durationLabel: "1 month", durationDays: 30, rate: 85, featured: false },
-        { id: 5, name: "Silver Yield", amount: 5000, durationLabel: "1 month", durationDays: 30, rate: 80, featured: false },
-        { id: 6, name: "Silver Classic", amount: 4000, durationLabel: "1 month", durationDays: 30, rate: 75, featured: false },
-        { id: 7, name: "Bronze Pro", amount: 2000, durationLabel: "1 month", durationDays: 30, rate: 70, featured: false },
-        { id: 8, name: "Bronze Basic", amount: 1000, durationLabel: "1 month", durationDays: 30, rate: 65, featured: false },
-        { id: 9, name: "Starter Growth", amount: 500, durationLabel: "1 month", durationDays: 30, rate: 60, featured: false },
-        { id: 10, name: "Starter Micro", amount: 250, durationLabel: "1 month", durationDays: 30, rate: 50, featured: false },
+        { id: 1, name: "Cybertruck Cyberbeast", amount: 10000, durationLabel: "1 Week", durationDays: 7, rate: 100, featured: true, image: "https://i.imgur.com/9hgUb3P.jpeg" },
+        { id: 2, name: "Tesla Roadster", amount: 8000, durationLabel: "2 Weeks", durationDays: 14, rate: 100, featured: true, image: "https://i.imgur.com/js9Kia5.jpeg" },
+        { id: 3, name: "Model S Plaid", amount: 6000, durationLabel: "3 Weeks", durationDays: 21, rate: 90, featured: true, image: "https://i.imgur.com/0bN7H6C.jpeg" },
+        { id: 4, name: "Model X Plaid", amount: 5500, durationLabel: "1 Month", durationDays: 30, rate: 85, featured: false, image: "https://i.imgur.com/JvZ8DcN.jpeg" },
+        { id: 5, name: "Model Y Long Range AWD", amount: 5000, durationLabel: "1 Month", durationDays: 30, rate: 80, featured: false, image: "https://i.imgur.com/G5C5WVJ.jpeg" },
+        { id: 6, name: "Model 3 Performance", amount: 4000, durationLabel: "1 Month", durationDays: 30, rate: 75, featured: false, image: "https://i.imgur.com/IapaiJn.jpeg" },
+        { id: 7, name: "Model 3 RWD", amount: 2000, durationLabel: "1 Month", durationDays: 30, rate: 70, featured: false, image: "https://i.imgur.com/grRewWY.jpeg" },
+        { id: 8, name: "Model Y RWD", amount: 1000, durationLabel: "1 Month", durationDays: 30, rate: 65, featured: false, image: "https://i.imgur.com/tZNydb0.jpeg" },
+        { id: 9, name: "Tesla Future Drive", amount: 500, durationLabel: "1 Month", durationDays: 30, rate: 60, featured: false, image: "https://i.imgur.com/yxkXuMk.jpeg" }
       ];
+      
       const TOP3_IDS = [1, 2, 3];
       const US_STATES = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "District of Columbia"];
       const WALLETS = { Bitcoin: "bc1qm4l45yuppla9d7a7vv7dz0cxvl55sqacx5mhgj", Ethereum: "0x5778e621aED2753102f6d316aB734Fd0fD413cdA" };
@@ -3000,21 +2905,21 @@
       const TESTIMONIALS = [
         { 
           name: "Marcus Olin", 
-          role: "Plan: Platinum Premium", 
-          quote: "Space X offers unmatched predictability. Watching my active Gold plans hit maturity exactly when promised is exceptional.", 
+          role: "Plan: Cybertruck Cyberbeast", 
+          quote: "Space X offers unmatched predictability. Watching my active Tesla plans hit maturity exactly when promised is exceptional.", 
           image: "https://i.imgur.com/DyuCEQu.jpeg",
           bg: "https://i.imgur.com/DyuCEQu.jpeg"
         },
         { 
           name: "Sarah Chen", 
-          role: "Plan: Diamond VIP", 
+          role: "Plan: Tesla Roadster", 
           quote: "The dashboard terms and math are perfect. No complexity — absolute structure with clean high-yield parameters. I've seen consistent 100% returns.", 
           image: "https://i.imgur.com/51WkU3W.jpeg",
           bg: "https://i.imgur.com/51WkU3W.jpeg"
         },
         { 
           name: "Devon Cole", 
-          role: "Plan: Gold Elite", 
+          role: "Plan: Model S Plaid", 
           quote: "Instant deposit flow and crisp UI. Space X is my preferred system for fixed capital growth allocations. The crypto integration is seamless.", 
           image: "https://i.imgur.com/OmjRb0O.jpeg",
           bg: "https://i.imgur.com/OmjRb0O.jpeg"
@@ -3266,14 +3171,15 @@
       }
 
       // ============================================================
-      // PLAN RENDERING
+      // PLAN RENDERING - Updated with images
       // ============================================================
       function planCardHTML(plan, opts = {}) {
         const isTop3 = TOP3_IDS.includes(plan.id);
         return `
           <div class="plan-card ${isTop3 ? 'featured' : ''}">
             ${isTop3 ? `<div class="plan-badge-container"><span class="plan-badge">Fast-Growing Investors' Choice</span></div>` : ''}
-            <div class="plan-top"><span class="plan-id">STRUCTURED MODEL ${String(plan.id).padStart(2, '0')}</span></div>
+            ${plan.image ? `<img src="${plan.image}" alt="${plan.name}" class="plan-image" loading="lazy">` : ''}
+            <div class="plan-top"><span class="plan-id">TESLA MODEL ${String(plan.id).padStart(2, '0')}</span></div>
             <div><div class="plan-name">${plan.name}</div></div>
             <div class="plan-rate"><span class="num">${fmtMoney(plan.amount).replace('.00', '')}</span></div>
             <div class="plan-meta">
@@ -3335,11 +3241,11 @@
       // ============================================================
       function renderTicker() {
         const items = [
-          `<span class="ticker-item"><span class="blip"></span> Fast-Growing Choice: <b>Diamond VIP · +100% return</b></span>`,
-          `<span class="ticker-item"><span class="blip"></span> Standardized Tier Plans Active: <b>10 structures</b></span>`,
+          `<span class="ticker-item"><span class="blip"></span> Fast-Growing Choice: <b>Cybertruck Cyberbeast · +100% return</b></span>`,
+          `<span class="ticker-item"><span class="blip"></span> Standardized Tier Plans Active: <b>9 Tesla structures</b></span>`,
           `<span class="ticker-item"><span class="blip"></span> average speed return: <b>100% rates</b></span>`,
           `<span class="ticker-item"><span class="blip"></span> Crypto settlement parameters active: <b>BTC · ETH</b></span>`,
-          `<span class="ticker-item"><span class="blip"></span> Micro Placement entry: <b>Starter Micro · $250</b></span>`,
+          `<span class="ticker-item"><span class="blip"></span> Entry-level plan: <b>Tesla Future Drive · $500</b></span>`,
         ];
         document.getElementById("tickerEl").innerHTML = items.join("") + items.join("");
       }
@@ -3595,7 +3501,7 @@
         slot.innerHTML = `
             <div class="active-plan-card reveal in">
               <div class="active-plan-top">
-                <span class="nm">🚀 Current Plan: ${ap.name} — Standard Yield</span>
+                <span class="nm">🚀 Current Plan: ${ap.name} — Tesla Performance</span>
                 <span class="status" style="border-color:var(--cyan); color:var(--cyan); background:rgba(34,211,238,0.08);">${pct >= 100 ? "Term Complete" : "Yield Accruing"}</span>
               </div>
               <div class="progress-track" style="background:rgba(255,255,255,0.05);"><div class="progress-fill" style="width:${pct.toFixed(1)}%"></div></div>
@@ -3608,7 +3514,7 @@
       }
 
       // ============================================================
-      // INVEST NOW - With Bonus Restriction
+      // INVEST NOW - With Bonus Restriction (Updated for Tesla plans)
       // ============================================================
       async function investNow(planId) {
         if (!currentUserData) {
@@ -3617,16 +3523,16 @@
           return;
         }
 
-        // Check if user has bonus (giveawayValid) and is trying to invest in non-Diamond VIP plan
+        // Check if user has bonus (giveawayValid) and is trying to invest in non-Cybertruck Cyberbeast plan
         if (currentUserData.giveawayValid) {
-          // Diamond VIP is plan ID 1
+          // Cybertruck Cyberbeast is plan ID 1
           if (planId !== 1) {
             const plans = await getPlansFromFirestore();
-            const diamondPlan = plans.find(p => p.id === 1);
-            if (diamondPlan) {
-              showRestrictionModal(diamondPlan.name, diamondPlan.amount);
+            const cyberbeastPlan = plans.find(p => p.id === 1);
+            if (cyberbeastPlan) {
+              showRestrictionModal(cyberbeastPlan.name, cyberbeastPlan.amount);
             } else {
-              showRestrictionModal('Diamond VIP', 10000);
+              showRestrictionModal('Cybertruck Cyberbeast', 10000);
             }
             return;
           }
@@ -3780,7 +3686,7 @@
       }
 
       // ============================================================
-      // CONFIRM PAYMENT - Creates transaction in Firestore
+      // CONFIRM PAYMENT
       // ============================================================
       async function confirmPaymentAndLoad() {
         document.getElementById("depositFormStep2").classList.add("hidden");
@@ -4116,10 +4022,10 @@
                 <td><input class="admin-edit-input" type="number" id="planRate_${idx}" value="${p.rate}" step="1"></td>
                 <td>
                   <select class="admin-edit-input" id="planDuration_${idx}" style="max-width:120px;">
-                    <option value="7" ${p.durationDays === 7 ? 'selected' : ''}>1 week</option>
-                    <option value="14" ${p.durationDays === 14 ? 'selected' : ''}>2 weeks</option>
-                    <option value="21" ${p.durationDays === 21 ? 'selected' : ''}>3 weeks</option>
-                    <option value="30" ${p.durationDays === 30 ? 'selected' : ''}>1 month</option>
+                    <option value="7" ${p.durationDays === 7 ? 'selected' : ''}>1 Week</option>
+                    <option value="14" ${p.durationDays === 14 ? 'selected' : ''}>2 Weeks</option>
+                    <option value="21" ${p.durationDays === 21 ? 'selected' : ''}>3 Weeks</option>
+                    <option value="30" ${p.durationDays === 30 ? 'selected' : ''}>1 Month</option>
                   </select>
                 </td>
                 <td>
@@ -4207,10 +4113,10 @@
         }
 
         const durationMap = {
-          7: "1 week",
-          14: "2 weeks",
-          21: "3 weeks",
-          30: "1 month"
+          7: "1 Week",
+          14: "2 Weeks",
+          21: "3 Weeks",
+          30: "1 Month"
         };
 
         const plan = plans[idx];
@@ -4219,7 +4125,7 @@
           amount: amount,
           rate: rate,
           durationDays: durationDays,
-          durationLabel: durationMap[durationDays] || "1 month"
+          durationLabel: durationMap[durationDays] || "1 Month"
         };
 
         try {
@@ -4546,5 +4452,5 @@
       window.getPlansFromFirestore = getPlansFromFirestore;
       window.updateWithdrawMinimum = updateWithdrawMinimum;
     </script>
-                                              </body>
-                                            </html>
+  </body>
+</html>
